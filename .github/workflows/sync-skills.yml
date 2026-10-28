@@ -32,7 +32,7 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '22'
-      - run: node --test scripts/sync-skills.test.mjs
+      - run: node --test scripts/*.test.mjs
       - id: targets
         run: echo "matrix=$(node scripts/sync-skills.mjs --matrix)" >> "$GITHUB_OUTPUT"
 
@@ -69,15 +69,20 @@ jobs:
       - name: Verify consumer supports the shared library
         env:
           ADAPTER: ${{ matrix.adapter }}
+          VERSION_FILE: ${{ matrix.release.versionFile }}
         run: |
-          if [ ! -f "destination/$ADAPTER" ]; then
-            echo '::error::Merge the downstream shared-library installer migration before enabling deliveries.'
+          if [ ! -f "destination/$ADAPTER" ] || [ ! -f "destination/$VERSION_FILE" ]; then
+            echo '::error::Merge the downstream installer and release migrations before enabling deliveries.'
             exit 1
           fi
       - name: Synchronize subscribed files
         env:
           TARGET: ${{ matrix.target }}
         run: node source/scripts/sync-skills.mjs "$TARGET" "$GITHUB_WORKSPACE/destination"
+      - name: Prepare the patch release
+        env:
+          TARGET: ${{ matrix.target }}
+        run: node source/scripts/bump-downstream-version.mjs "$TARGET" "$GITHUB_WORKSPACE/destination"
       - name: Open or update the downstream PR
         uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8
         with:
@@ -94,4 +99,5 @@ jobs:
             The destination mapping in `distribution/targets.json` selects factory for both repositories, Laravel skills for Laracanon, and non-Laravel skills for domain-driver. Archived skills are excluded.
 
             Generated files are replaced as a snapshot, including removals. This branch is maintained by the delivery workflow; make content changes in the source repository.
+            Subscribed file changes include a patch-version bump. After merge and successful checks, the destination publishes to npm or tags a Packagist release automatically.
             See the [workflow run](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}).
