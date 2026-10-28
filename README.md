@@ -13,10 +13,10 @@ agents/
 skills/
   catalog.md               shared capability index
   laravel/                 actions, controllers, data, ...
-  nest/                    actions, architecture, security, api, data, testing, operations
+  nest/                    actions, controllers, dtos, database, migrations, ...
   next/                    actions
   tanstack-start/          actions
-  frontend/                dashboard-design
+  frontend/                app-shell, overlays, data-display
   quality/                 simplicity, review, security-review
 archive/
   skills/                  archived: general, react, javascript, inertia, and each stack's old *-feature-development skill
@@ -36,11 +36,11 @@ The [catalog](skills/catalog.md) lists reusable capabilities and path-resolution
 
 | Location | Capabilities |
 |---|---|
-| `skills/laravel/` | Laravel conventions: [actions](skills/laravel/actions/SKILL.md), [api-responses](skills/laravel/api-responses/SKILL.md), [architecture](skills/laravel/architecture/SKILL.md), [controllers](skills/laravel/controllers/SKILL.md), [data](skills/laravel/data/SKILL.md), [eloquent-strictness](skills/laravel/eloquent-strictness/SKILL.md), [enums](skills/laravel/enums/SKILL.md), [frontend](skills/laravel/frontend/SKILL.md), [insights](skills/laravel/insights/SKILL.md), [jobs](skills/laravel/jobs/SKILL.md), [migrations](skills/laravel/migrations/SKILL.md), [models](skills/laravel/models/SKILL.md), [phpstan](skills/laravel/phpstan/SKILL.md), [plans](skills/laravel/plans/SKILL.md), [requests](skills/laravel/requests/SKILL.md), [security](skills/laravel/security/SKILL.md), [tests](skills/laravel/tests/SKILL.md) |
-| `skills/nest/` | NestJS conventions, partly adapted from nestjs-best-practices: [actions](skills/nest/actions/SKILL.md), [api](skills/nest/api/SKILL.md), [architecture](skills/nest/architecture/SKILL.md), [data](skills/nest/data/SKILL.md), [operations](skills/nest/operations/SKILL.md), [security](skills/nest/security/SKILL.md), [testing](skills/nest/testing/SKILL.md) |
+| `skills/laravel/` | Laravel conventions: [actions](skills/laravel/actions/SKILL.md), [api-responses](skills/laravel/api-responses/SKILL.md), [architecture](skills/laravel/architecture/SKILL.md), [controllers](skills/laravel/controllers/SKILL.md), [data](skills/laravel/data/SKILL.md), [eloquent-strictness](skills/laravel/eloquent-strictness/SKILL.md), [enums](skills/laravel/enums/SKILL.md), [frontend](skills/laravel/frontend/SKILL.md), [insights](skills/laravel/insights/SKILL.md), [jobs](skills/laravel/jobs/SKILL.md), [migrations](skills/laravel/migrations/SKILL.md), [models](skills/laravel/models/SKILL.md), [phpstan](skills/laravel/phpstan/SKILL.md), [requests](skills/laravel/requests/SKILL.md), [security](skills/laravel/security/SKILL.md), [tests](skills/laravel/tests/SKILL.md) |
+| `skills/nest/` | NestJS conventions for Prisma and Zod: [actions](skills/nest/actions/SKILL.md), [api-responses](skills/nest/api-responses/SKILL.md), [architecture](skills/nest/architecture/SKILL.md), [controllers](skills/nest/controllers/SKILL.md), [database](skills/nest/database/SKILL.md), [dtos](skills/nest/dtos/SKILL.md), [jobs](skills/nest/jobs/SKILL.md), [migrations](skills/nest/migrations/SKILL.md), [security](skills/nest/security/SKILL.md), [tests](skills/nest/tests/SKILL.md) |
 | `skills/next/` | [Next actions](skills/next/actions/SKILL.md) |
 | `skills/tanstack-start/` | [TanStack Start actions](skills/tanstack-start/actions/SKILL.md) |
-| `skills/frontend/` | [Dashboard design](skills/frontend/dashboard-design/SKILL.md), stack-agnostic |
+| `skills/frontend/` | Stack-agnostic: [app-shell](skills/frontend/app-shell/SKILL.md), [overlays](skills/frontend/overlays/SKILL.md), [data-display](skills/frontend/data-display/SKILL.md) |
 | `skills/quality/` | Stack-agnostic, adapted from Anthropic's official plugins: [simplicity](skills/quality/simplicity/SKILL.md), [review](skills/quality/review/SKILL.md), [security-review](skills/quality/security-review/SKILL.md) |
 
 Other skill groups (`general`, `react`, `javascript`, `inertia`, and the earlier `*-feature-development` skills of each stack) are archived under [`archive/skills/`](archive/skills/). They are not in the catalog and are not distributed. To restore one, move it back under `skills/` and add it to the catalog.
@@ -49,13 +49,13 @@ The factory workflow still assigns several archived skills to its roles (see [it
 
 Use `skills/<group>/<skill-name>/SKILL.md` with lowercase, hyphenated names and YAML `name`/`description` frontmatter. Add supporting files only when needed. Register a new capability in the shared catalog; each agent workflow maintains its own role/phase selection rules.
 
-Each stack folder is self-contained so it can ship on its own: every `<stack>/actions` skill carries the common operation contract plus that stack's conventions.
+Each stack folder is self-contained so it can ship on its own. Its `actions` skill covers only that framework; stack-agnostic rules live in `skills/quality/`.
 
 ## Planned distribution
 
 Later, merges to `main` will open PRs in downstream repositories for the agent bundles and skill groups they use.
 
-- `skills/laravel/` changes go to Laravel consumers such as Laracanon; `skills/nest/`, `skills/next/` and `skills/tanstack-start/` likewise go to their own stack's consumers.
+- `skills/laravel/` changes go to Laravel consumers through Laracanon; `skills/nest/`, `skills/next/` and `skills/tanstack-start/` go to JavaScript consumers through domain-driver.
 - `skills/quality/` and `skills/frontend/` are stack-agnostic and go to every consumer that selects them.
 - `agents/factory/` changes go to consumers of the factory workflow.
 - `archive/` is never distributed.
