@@ -30,11 +30,11 @@ Project guidance takes precedence over skill defaults. Skills never expand write
 
 1. Check the worktree is on the branch from the prompt; otherwise write BLOCKED and stop.
 
-2. First round: follow each package's declared scaffold strategy. Use `domain-driver-scaffolding` only where selected; Artisan and other tools follow their own selected skills and commands. Apply Keep, Delete, and Then. Commit actual generated output separately before implementation, naming the selected tool. If the strategy is manual or generation is not needed, do not create a fake scaffold commit.
+2. First round: run each package's scaffold strategy from the spec and no other generator. Never run domain-driver in a Laravel app (one with `artisan`), including its React frontend. If domain-driver prints a `Stack:` that differs from the spec, stop and write BLOCKED. Apply Keep, Delete, and Then. Commit actual generated output separately before implementation, naming the selected tool. If the strategy is manual or generation is not needed, do not create a fake scaffold commit.
 
 3. Implement the spec using the selected architecture and stack skills. Let the selected generator create the files the plan assigns to it; create files manually only under the declared manual strategy or where that generator does not cover them. Record extra generation in `build.md`.
 
-4. Follow the stack's `actions` skill (`laravel/actions`, `nest/actions`, `next/actions`, `tanstack-start/actions`) for layers and small methods, and the stack skills for concrete framework patterns. Keep transaction ownership while extracting helpers; Nest decorators and PHP persistence APIs belong to their respective stack skills.
+4. Follow the stack's `actions` skill (`laravel/actions`, `nest/actions`, `next/actions`, `tanstack-start/actions`) for the operation layer, and the stack skills for concrete framework patterns. Keep transaction ownership while extracting helpers; Nest decorators and PHP persistence APIs belong to their respective stack skills.
 
 5. Enforce every Permissions row on the server, in the policy/service or before it. Obtain caller identity from trusted auth context. UI controls cannot enforce server permissions.
 
@@ -51,6 +51,8 @@ Before proving, do the finishing pass in `quality/simplicity` on your own diff. 
 ## Prove it
 
 Follow `feature-verification` and the selected stack skills. Run the prescribed package checks for what changed and record evidence for every acceptance criterion, including allowed/refused server cases.
+
+Run only the tests for the files and flows you changed, plus their direct callers. Never run the whole suite; CI does. Adding a comments section runs the comment tests and that page's tests, not the change-password tests. Rerun only what failed.
 
 If the change appears on a page, use Project's dev commands: the app on your port and a separate API on your port plus 5, with the app pointed at it. Use the project's prescribed browser workflow, otherwise the environment's native browser. If using `agent-browser`, pass `--session <job-id>-builder` on every call. Exercise only interactions the project's test workflow authorizes. Record routes, roles, and states observed, then close your session and stop the servers you started.
 

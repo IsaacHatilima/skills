@@ -22,7 +22,11 @@ It gives the job id, job folder, worktree, branch, base, request, shared skill c
 
 3. Resolve the factory selection rules and shared catalog's applicable skills for every role, not just yourself. Read the selected skills assigned to `spec-writer` before planning. For another stack, use an explicitly available project-specific skill that covers it; unavailable required skills block the spec.
 
-4. Choose scaffolding separately for each touched package: the project's installed domain-driver, Artisan/custom tooling, or an explicit manual strategy when no generator fits. Never add a dependency to make the project resemble an example. When domain-driver is selected, use `domain-driver-scaffolding` and the installed project's domain-driver skill.
+4. Choose scaffolding separately for each touched package:
+   - A Laravel app (`artisan` at its root) scaffolds with `php artisan make:*` or the project's own commands. This includes its `resources/js` frontend: never choose domain-driver there, even though `package.json` lists React.
+   - A JavaScript package without `artisan` uses domain-driver only when that package depends on it or its guidance names it. Then also read the package's installed `domain-driver` skill if it has one.
+   - Anything else, or a change no generator covers, gets a manual strategy naming the existing layout it follows.
+   Never add a dependency to make the project resemble an example.
 
 5. Read the existing feature, authentication and authorization paths, API/page-prop contracts, response handling, and `Documentation/index.md` and feature page if present. Name real files and commands.
 
@@ -45,7 +49,7 @@ Shape: <single project or monorepo, with evidence>
 | <folder or .> | <all applicable stacks, server/browser/library> | <real folders> | <tool or manual> | <guidance paths, root first> |
 
 Commands:
-- <folder>: <tests, focused test, type-check, changed-file lint, build, and dev-server commands>
+- <folder>: <focused test (one file or filter), type-check, changed-file lint, build, and dev-server commands>
 
 API: <owning package and boundary, external API with evidence, or none>
 UI: <affected pages/templates/flows, or none with reason>
@@ -101,11 +105,11 @@ Expected: <two to four sentences for the feature's users>
 
 - List one Project row for every touched package and any package whose guidance applies. A single Laravel/React app can have one row with both stacks. Library changes follow their own conventions rather than application scaffolding.
 
-- Commands come from project guidance and manifests, including any serial-suite or database restrictions. Include dev ports, API configuration, and a focused test command where available.
+- Commands come from project guidance and manifests, including any serial-suite or database restrictions. Include dev ports, API configuration, and the command that runs one test file or filter. Never plan a full-suite run; CI runs the whole suite.
 
 - The Skills table lists actual files and roles from the catalog. Include the discovery row. Readability, scope, and stack coverage are prerequisites for READY. For unavailable required skills, use `Status: BLOCKED`, retain the canonical source path with an unavailable marker, and add `## Blocked` naming each missing skill or decision. Never invent a resolved path.
 
-- Keep the generator's expected stack separate from the detected project stacks. Only domain-driver commands require its printed `Stack:` check. Artisan/custom commands use their own documented success checks. With no generation, explain which existing layout the manual changes follow.
+- Record the stack each generator should detect. domain-driver prints `Stack: ...` before writing; the builder stops if it differs. Artisan and custom commands use their own documented success checks. With no generation, explain which existing layout the manual changes follow.
 
 - API contracts include the real caller's handling of envelopes, redirects, props, validation, and refusals. Use repository routes, schemas, existing clients, or checked-in API documentation. Put unconfirmed details under Assumptions.
 

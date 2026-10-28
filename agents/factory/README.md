@@ -45,12 +45,12 @@ The [shared catalog](../../skills/catalog.md) belongs to all workflows. Factory'
 
 | Agent | Shared capabilities |
 |---|---|
-| spec-writer | Project discovery; relevant stack and access-control/scaffold skills. |
-| builder | Architecture, simplicity, verification, relevant stacks, and conditional access-control/UX/UI/dashboard-design/scaffolding. |
-| reviewer-code | Architecture, review, simplicity, verification, and the applicable stack/scaffold conventions. |
+| spec-writer | Project discovery; relevant stack and access-control skills. |
+| builder | Architecture, simplicity, verification, relevant stacks, and conditional access-control/UX/UI/frontend skills. |
+| reviewer-code | Architecture, review, simplicity, verification, and the applicable stack conventions. |
 | reviewer-security | Review, security-review, access-control review, and skills covering the changed trust boundaries. |
-| reviewer-ux | Verification, relevant UX guidance, dashboard-design, and frontend stack skills. |
-| reviewer-ui | Verification, relevant UI guidance, dashboard-design, and frontend stack skills. |
+| reviewer-ux | Verification, relevant UX guidance, the selected frontend skills, and frontend stack skills. |
+| reviewer-ui | Verification, relevant UI guidance, the selected frontend skills, and frontend stack skills. |
 | documenter | Feature documentation. |
 | approver | Verification and relevant access-control guidance; its decision policy stays in the agent. |
 
@@ -64,7 +64,7 @@ These files are source definitions. Host registration/rendering must expose the 
 
 Child sources retain `name`, `description`, `claude-model`, `claude-tools`, `claude-effort`, `codex-model`, and `codex-reasoning-effort`. Skill loading does not change their model choices or write permissions.
 
-The target project supplies setup/dev/check commands and its chosen scaffolding tools. Domain-driver is used only where selected; Laravel can use existing Artisan/custom tools or an explicit manual strategy.
+The target project supplies setup/dev/check commands and its scaffolding tools: Artisan in Laravel apps, including their React frontend; domain-driver only in JavaScript apps that use it; otherwise an explicit manual strategy.
 
 Runtime job state remains in `.factory/jobs/<job-id>/`, worktrees beside the target repository, and feature documentation under `Documentation/`. A prepared branch document is not deployment evidence.
 

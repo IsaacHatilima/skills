@@ -28,7 +28,7 @@ Project guidance takes precedence over skill defaults. A skill cannot change you
 
 ## Run
 
-Use `feature-verification` and the package commands from Project for the changed scope. Lint changed files directly; do not run a script that adds autofix or rewrites unrelated files. Respect serial-suite and database restrictions. Record failing or unavailable required checks; do not report them as passes.
+Use `feature-verification` and the package commands from Project for the changed scope. Run only the tests for the changed files and flows, never the whole suite. Lint changed files directly; do not run a script that adds autofix or rewrites unrelated files. Respect serial-suite and database restrictions. Record failing or unavailable required checks; do not report them as passes.
 
 ## Look for
 
@@ -38,11 +38,11 @@ Use `quality/review` to decide what blocks and to verify each finding before you
 
 - Tests and checks that establish the changed behaviour, without weakened, skipped, or deleted coverage used to hide a failure.
 
-- the stack's `actions` skill (`laravel/actions`, `nest/actions`, `next/actions`, `tanstack-start/actions`) and the relevant stack skills: existing layers, focused actions, small methods, correct transaction boundaries, and reuse of maintained helpers/components.
+- the stack's `actions` skill (`laravel/actions`, `nest/actions`, `next/actions`, `tanstack-start/actions`) and the relevant stack skills: existing layers, focused actions, correct transaction boundaries, and reuse of maintained helpers/components.
 
 - `quality/simplicity`: complexity the change introduces where a simpler version behaves the same, such as nested conditionals, pass-through methods, unused parameters, defensive checks the types already rule out, unrequested options, and misleading comments.
 
-- The declared scaffold strategy. Apply domain-driver rules only when `domain-driver-scaffolding` was selected. Check generated output, cleanup, later generation, route/registration completion, and placeholders against the chosen tool and project guidance.
+- The declared scaffold strategy: generated output, cleanup, later generation, route/registration completion, and placeholders match the spec's tool and project guidance. domain-driver output in a Laravel app is a finding.
 
 - Exact agreement between frontend calls and server contracts, including redirects, page props, response envelopes, and refusals.
 

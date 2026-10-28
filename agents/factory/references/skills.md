@@ -12,7 +12,6 @@ Every role reads only its assigned skills. Missing required files block implemen
 |---|---|---|
 | project-discovery | spec-writer | Every job; bootstrap before planning. |
 | laravel/actions, nest/actions, next/actions, tanstack-start/actions | builder, reviewer-code | The task changes application code. |
-| domain-driver-scaffolding | spec-writer, builder, reviewer-code | A touched package explicitly selects domain-driver. |
 | feature-verification | builder, reviewer-code, reviewer-ux, reviewer-ui, approver | Evidence for the role's task and acceptance criteria. |
 | access-control-review | spec-writer, builder, reviewer-security, approver | Changed entry points, permissions, scoped data, or client/server exposure. |
 | ux-review | builder, reviewer-ux | A changed screen, template, or interactive user flow. |
@@ -21,9 +20,11 @@ Every role reads only its assigned skills. Missing required files block implemen
 | quality/simplicity | builder, reviewer-code | The task changes application code. |
 | quality/review | reviewer-code, reviewer-security | Every review of a code change. |
 | quality/security-review | reviewer-security | Every review of a code change. |
-| frontend/dashboard-design | builder, reviewer-ux, reviewer-ui | A changed dashboard, admin or settings screen, data table, activity log, or first-run flow. |
+| frontend/app-shell | builder, reviewer-ux, reviewer-ui | A change to the layout, navigation, sidebar, header, post-login redirect, or page-level loading, empty, or error states. |
+| frontend/overlays | builder, reviewer-ux, reviewer-ui | A dialog, drawer, sheet, popover, menu, tooltip, toast, or confirmation is added or changed. |
+| frontend/data-display | builder, reviewer-ux, reviewer-ui | A table, list, activity log, timeline, KPI tile, or chart is added or changed. |
 
-When domain-driver is selected, also resolve its installed project-specific `domain-driver` skill and list it for spec-writer, builder, and reviewer-code. Treat its absence as a missing prerequisite.
+When a package's scaffold strategy is domain-driver and the package has an installed `domain-driver` skill, list it for spec-writer, builder, and reviewer-code. A Laravel app never scaffolds with domain-driver, including its React frontend.
 
 For a security review without changed access/data boundaries, use the role's baseline diff review. The approver reuses verification and relevant access-control guidance while retaining its own decision policy.
 

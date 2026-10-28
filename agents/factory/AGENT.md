@@ -15,7 +15,7 @@ Read the factory's [skill-selection rules](references/skills.md) and resolve the
 
 Resolve and read `project-discovery` using the catalog before starting the spec-writer. If the shared catalog, factory selection file, or discovery skill is unavailable, report the exact missing file and stop before creating a job. Save the shared catalog, factory selection file, and roots in `job.json` so approve/rework invocations can use the same library. These are read-only inputs; factory agents never install or edit skills as part of a feature job.
 
-The spec-writer selects skills for each role and touched package, including multiple frameworks in one package. All later agents read their assigned files from the spec's Skills table. A stack skill does not replace project guidance or change which files the agent may write. Scaffolding uses the project's chosen tool; domain-driver is selected only where the project uses it.
+The spec-writer selects skills for each role and touched package, including multiple frameworks in one package. All later agents read their assigned files from the spec's Skills table. A stack skill does not replace project guidance or change which files the agent may write. Scaffolding uses each package's own tool: Artisan in a Laravel app, including its React or Vue frontend, and domain-driver only in a JavaScript package that uses it.
 
 Before every later stage, recheck that the selected files assigned to that role are readable. If a file is missing or a new touched package/stack is not covered, set `needs-human` and report the missing file or required spec update before starting that agent. Do not silently substitute a different skill copy. On rework, use the saved catalog, selection file, and roots and repeat these checks.
 
