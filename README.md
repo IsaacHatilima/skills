@@ -70,6 +70,10 @@ The [delivery workflow](.github/workflows/sync-skills.yml) runs after relevant c
 
 Factory's bundle stays together, its eight child agents are rendered for Claude Code and Codex, and native skill names include their group (`laravel-actions`, `nest-actions`). Each consumer receives a catalog containing only its delivered skills. The destination installers read `catalog.json`; neither maintains its own authored skill content.
 
+Installed skills have one shared copy in `.agents/skills/`. Claude discovers relative links in `.claude/skills/`; Laracanon also links `.ai/skills/` for Laravel Boost. Codex reads `.agents/skills/` directly, while `.codex/agents/` holds its factory roles. There is no separate `.codex/skills/` copy. Existing verified duplicate files are migrated; conflicting edits are preserved and reported.
+
+The delivery manifest uses schema 2 to distinguish file contents from links. Merge the matching consumer installer migrations before delivering this schema; the workflow checks each adapter's `LIBRARY_SCHEMA` support.
+
 Set the `SKILLS_SYNC_TOKEN` Actions secret in this repository to a fine-grained GitHub token limited to the two destination repositories, with **Contents: read and write** and **Pull requests: read and write**. The source checkout uses its own read-only `GITHUB_TOKEN`. The cross-repository token also lets downstream PR checks run. No credential belongs in this repository's files.
 
 Preview or bootstrap a delivery locally in a destination checkout:

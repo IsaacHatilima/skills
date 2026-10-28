@@ -14,12 +14,15 @@ test('both consumers receive a complete factory, with eight agents for each host
     const files = build(name);
     const factory = manifest(files).items.find(item => item.name === 'factory');
     assert.ok(factory);
-    for (const host of ['.ai/skills', '.agents/skills', '.claude/skills']) {
+    assert.equal(manifest(files).schema, 2);
+    for (const host of ['.agents/skills']) {
       for (const local of ['SKILL.md', 'AGENT.md', 'agents/openai.yaml', 'references/skills.md']) {
         assert.ok(files.has(factory.files[`${host}/factory/${local}`]));
       }
       assert.ok(factory.files[`${host}/catalog.md`]);
     }
+    assert.equal(factory.links['.claude/skills/factory'], '.agents/skills/factory');
+    assert.equal(factory.links['.ai/skills/factory'], name === 'laracanon' ? '.agents/skills/factory' : undefined);
     for (const [host, extension] of [['claude', 'md'], ['codex', 'toml']]) {
       assert.equal(Object.keys(factory.files).filter(file => file.startsWith(`.${host}/agents/`) && file.endsWith(extension)).length, 8);
     }
@@ -57,9 +60,17 @@ test('all manifest files resolve and native skill names avoid stack collisions',
       }
     }
     const factory = manifest(files).items.find(item => item.name === 'factory');
-    for (const host of ['.agents/skills', '.claude/skills', '.ai/skills']) {
+    for (const host of ['.agents/skills']) {
       assert.ok(factory.files[posix.normalize(`${host}/factory/../../skills/catalog.md`)]);
       assert.ok(factory.files[posix.normalize(`${host}/factory/references/../../../skills/catalog.md`)]);
+    }
+    for (const item of manifest(files).items) {
+      for (const [alias, target] of Object.entries(item.links)) {
+        assert.match(alias, /^\.(?:ai|claude)\/skills\/[^/]+$/);
+        assert.equal(target, `.agents/skills/${posix.basename(alias)}`);
+        assert.ok(Object.keys(item.files).some(file => file === target || file.startsWith(`${target}/`)));
+      }
+      assert.ok(Object.keys(item.files).every(file => !file.startsWith('.ai/skills/') && !file.startsWith('.claude/skills/')));
     }
   }
 });
