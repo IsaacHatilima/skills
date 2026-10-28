@@ -75,6 +75,10 @@ jobs:
             echo '::error::Merge the downstream installer and release migrations before enabling deliveries.'
             exit 1
           fi
+          if ! grep -q 'LIBRARY_SCHEMA = 2;' "destination/$ADAPTER"; then
+            echo '::error::Merge the downstream shared-skill link migration before delivering schema 2.'
+            exit 1
+          fi
       - name: Synchronize subscribed files
         env:
           TARGET: ${{ matrix.target }}

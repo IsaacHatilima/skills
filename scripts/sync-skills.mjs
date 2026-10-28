@@ -3,7 +3,7 @@ import { dirname, isAbsolute, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 export const SOURCE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const HOSTS = ['.ai/skills', '.agents/skills', '.claude/skills'];
+const SKILL_ROOT = '.agents/skills';
 const AGENT_FIELDS = ['name', 'description', 'claude-model', 'claude-tools', 'claude-effort', 'codex-model', 'codex-reasoning-effort'];
 
 export function targets(root = SOURCE_ROOT) {
@@ -58,7 +58,7 @@ function agentOutput(text, label) {
 
 function catalog(skills) {
   const rows = skills.map(skill => `| ${skill.id} | \`${skill.id}/SKILL.md\` | ${skill.description.replaceAll('|', '\\|')} |`);
-  return `# Installed skill catalog\n\nGenerated from IsaacHatilima/skills. Only the skills delivered to this consumer are listed.\n\n## Resolve skill files\n\nA skill id is its grouped source path. In project-native roots it uses a group-prefixed folder, such as \`laravel-actions/SKILL.md\`.\n\n1. Prefer a copy in the target worktree's \`.agents/skills/\`, \`.claude/skills/\`, or \`.ai/skills/\`.\n2. Then use the supplied library roots in their stated order: a grouped canonical path, or the group-prefixed folder in a flat root.\n\nRead the selected file and record its absolute path. Conflicting copies at the same priority require an explicit selection. Library roots outside the target worktree are read-only. Missing required skills block the relevant stage; missing unused groups do not. Project guidance takes precedence. Skills do not expand write ownership or authorize external effects.\n\n## Available skills\n\n| Skill id | Canonical path | Use when |\n|---|---|---|\n${rows.join('\n')}\n`;
+  return `# Installed skill catalog\n\nGenerated from IsaacHatilima/skills. Only the skills delivered to this consumer are listed.\n\n## Resolve skill files\n\nA skill id is its grouped source path. Installed skills have one shared copy in \`.agents/skills/\`, with group-prefixed folders such as \`laravel-actions/SKILL.md\`. Claude and Laravel Boost discover these same files through relative links in their native skill directories. Codex reads \`.agents/skills/\` directly; it does not need \`.codex/skills/\`.\n\n1. Prefer the target worktree's \`.agents/skills/\`.\n2. Then use the supplied library roots in their stated order: a grouped canonical path, or the group-prefixed folder in a flat root.\n\nRead the selected file and record its absolute path. Library roots outside the target worktree are read-only. Missing required skills block the relevant stage; missing unused groups do not. Project guidance takes precedence. Skills do not expand write ownership or authorize external effects.\n\n## Available skills\n\n| Skill id | Canonical path | Use when |\n|---|---|---|\n${rows.join('\n')}\n`;
 }
 
 /** Build a deterministic snapshot. No commit id is stored, so unrelated changes are a no-op. */
@@ -66,6 +66,8 @@ export function buildLibrary(root, target) {
   const output = new Map();
   const items = [];
   const skillMetadata = [];
+  const linkRoots = target.groups.includes('laravel') ? ['.ai/skills', '.claude/skills'] : ['.claude/skills'];
+  const skillLinks = name => Object.fromEntries(linkRoots.map(host => [`${host}/${name}`, `${SKILL_ROOT}/${name}`]));
   const groups = readdirSync(join(root, 'skills'), { withFileTypes: true })
     .filter(entry => entry.isDirectory() && (target.groups.includes('*') || target.groups.includes(entry.name)) && !target.excludeGroups.includes(entry.name))
     .map(entry => entry.name).sort();
@@ -95,9 +97,9 @@ export function buildLibrary(root, target) {
             .replace(/^description: [^\r\n]+/m, `description: ${JSON.stringify(description)}`);
         }
         add(file, contents);
-        for (const host of HOSTS) paths[`${host}/${nativeName}/${suffix}`] = file;
+        paths[`${SKILL_ROOT}/${nativeName}/${suffix}`] = file;
       }
-      items.push({ name: nativeName, description, files: paths });
+      items.push({ name: nativeName, description, files: paths, links: skillLinks(nativeName) });
       skillMetadata.push({ id, description });
     }
   }
@@ -109,7 +111,7 @@ export function buildLibrary(root, target) {
     for (const file of filesUnder(root, prefix)) {
       add(file, readFileSync(join(root, file), 'utf8'));
       const suffix = file.slice(prefix.length + 1);
-      for (const host of HOSTS) paths[`${host}/${name}/${suffix}`] = file;
+      paths[`${SKILL_ROOT}/${name}/${suffix}`] = file;
       if (file.endsWith('.md') && !['AGENT.md', 'SKILL.md', 'README.md'].includes(suffix) && !suffix.includes('/')) {
         const agent = agentOutput(output.get(file), file);
         if (suffix !== `${agent.name}.md`) throw new Error(`${file}: name does not match filename`);
@@ -120,12 +122,13 @@ export function buildLibrary(root, target) {
         }
       }
     }
-    for (const host of HOSTS) paths[`${host}/catalog.md`] = 'skills/catalog.md';
-    items.push({ name, description: field(text, 'description', `${prefix}/SKILL.md`), files: paths });
+    paths[`${SKILL_ROOT}/catalog.md`] = 'skills/catalog.md';
+    const links = { ...skillLinks(name), ...skillLinks('catalog.md') };
+    items.push({ name, description: field(text, 'description', `${prefix}/SKILL.md`), files: paths, links });
   }
   items.sort((a, b) => a.name.localeCompare(b.name));
   if (new Set(items.map(item => item.name)).size !== items.length) throw new Error('Duplicate native skill or workflow name');
-  add('catalog.json', `${JSON.stringify({ schema: 1, source: 'https://github.com/IsaacHatilima/skills', items }, null, 2)}\n`);
+  add('catalog.json', `${JSON.stringify({ schema: 2, source: 'https://github.com/IsaacHatilima/skills', items }, null, 2)}\n`);
   add('README.md', '# Generated agent library\n\nManaged by [IsaacHatilima/skills](https://github.com/IsaacHatilima/skills). Edit skills and factory agents there; its main-branch workflow opens update PRs here.\n\n`catalog.json` maps each installable item to its project files. `agents/` and `skills/` preserve the shared layout; `rendered/` contains host-specific child agents.\n');
   return output;
 }
