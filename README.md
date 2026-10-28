@@ -17,6 +17,7 @@ skills/
   next/                    actions
   tanstack-start/          actions
   frontend/                dashboard-design
+  quality/                 simplicity, review, security-review
 archive/
   skills/                  archived: general, react, javascript, inertia, and each stack's old *-feature-development skill
 ```
@@ -40,6 +41,7 @@ The [catalog](skills/catalog.md) lists reusable capabilities and path-resolution
 | `skills/next/` | [Next actions](skills/next/actions/SKILL.md) |
 | `skills/tanstack-start/` | [TanStack Start actions](skills/tanstack-start/actions/SKILL.md) |
 | `skills/frontend/` | [Dashboard design](skills/frontend/dashboard-design/SKILL.md), stack-agnostic |
+| `skills/quality/` | Stack-agnostic, adapted from Anthropic's official plugins: [simplicity](skills/quality/simplicity/SKILL.md), [review](skills/quality/review/SKILL.md), [security-review](skills/quality/security-review/SKILL.md) |
 
 Other skill groups (`general`, `react`, `javascript`, `inertia`, and the earlier `*-feature-development` skills of each stack) are archived under [`archive/skills/`](archive/skills/). They are not in the catalog and are not distributed. To restore one, move it back under `skills/` and add it to the catalog.
 
@@ -54,6 +56,7 @@ Each stack folder is self-contained so it can ship on its own: every `<stack>/ac
 Later, merges to `main` will open PRs in downstream repositories for the agent bundles and skill groups they use.
 
 - `skills/laravel/` changes go to Laravel consumers such as Laracanon; `skills/nest/`, `skills/next/` and `skills/tanstack-start/` likewise go to their own stack's consumers.
+- `skills/quality/` and `skills/frontend/` are stack-agnostic and go to every consumer that selects them.
 - `agents/factory/` changes go to consumers of the factory workflow.
 - `archive/` is never distributed.
 

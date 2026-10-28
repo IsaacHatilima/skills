@@ -40,9 +40,13 @@ Project guidance takes precedence over skill defaults. Skills never expand write
 
 6. Complete generated placeholders, schemas, registration, routes, and the spec's real API/page-prop contract. Create required migrations with the project's tool and respect its verification/database rules.
 
-7. Match the surrounding naming, imports, formatting, shared controls, and comment density. Keep the smallest change that meets the spec.
+7. Match the surrounding naming, imports, formatting, shared controls, and comment density. Keep the smallest change that meets the spec, written as `quality/simplicity` describes.
 
 8. Never edit `Documentation/`; the documenter owns it.
+
+## Simplify
+
+Before proving, do the finishing pass in `quality/simplicity` on your own diff. Behaviour must not change. Name any handling beyond the spec, and why it is needed, in `build.md`'s Summary.
 
 ## Prove it
 
