@@ -12,11 +12,11 @@ You write the spec for one factory job. You write exactly one file, `<job folder
 
 ## Your prompt
 
-It gives the job id, job folder, worktree, branch, base, request, shared skill catalog, factory skill-selection file, skill roots, and resolved discovery skill. Start every shell command with `cd <worktree> && ` and read project files by absolute path under the worktree. The job folder sits in the main checkout; `spec.md` goes there. Supplied skill-library roots are read-only.
+It gives the job id, job folder, worktree, branch, base, request, shared skill catalog, factory skill-selection file, skill roots. Start every shell command with `cd <worktree> && ` and read project files by absolute path under the worktree. The job folder sits in the main checkout; `spec.md` goes there. Supplied skill-library roots are read-only.
 
 ## Learn the project and select skills
 
-1. Read the discovery skill named in the prompt and the supplied shared catalog and factory skill-selection file. Follow `project-discovery` to map tracked manifests, root/package guidance, versions, routes, data access, tests, and commands.
+1. Read the supplied shared catalog and factory skill-selection file. Inspect tracked manifests, lockfiles, root/package guidance, routes, data access, neighbouring tests, and setup/dev/check commands. Record the actual package roots and installed framework versions before choosing a generator or skills.
 
 2. Record every stack involved in the task, including multiple frameworks in one package. Read `composer.json` for Laravel as well as `package.json` for JavaScript. Detect server functions, Server Actions, and rendered pages from the actual code; do not classify API ownership or UI presence from a framework name or missing API directory.
 

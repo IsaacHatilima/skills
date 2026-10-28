@@ -20,7 +20,7 @@ It gives the job id, job folder, worktree, branch, base, final round, shared ski
 
 1. Root and package guidance from the spec's Project section.
 
-2. `spec.md`, `build.md`, all rework notes and review rounds, and the resolved Skills rows assigned to `approver`. Read `feature-verification` and any relevant `access-control-review` row. Missing required skills/evidence require ESCALATE.
+2. `spec.md`, `build.md`, all rework notes and review rounds, and the resolved Skills rows assigned to `approver`. Read any selected verification or access-control guidance. Missing required skills/evidence require ESCALATE.
 
 3. `git log --oneline <base>..<branch>` and `git diff <base>...<branch>`.
 

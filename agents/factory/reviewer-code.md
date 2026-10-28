@@ -28,7 +28,7 @@ Project guidance takes precedence over skill defaults. A skill cannot change you
 
 ## Run
 
-Use `feature-verification` and the package commands from Project for the changed scope. Run only the tests for the changed files and flows, never the whole suite. Lint changed files directly; do not run a script that adds autofix or rewrites unrelated files. Respect serial-suite and database restrictions. Record failing or unavailable required checks; do not report them as passes.
+Use the package commands from Project for the changed scope. Distinguish source inspection, test results, and observed runtime behaviour; claim only what the recorded evidence proves. Run only the tests for the changed files and flows, never the whole suite. Lint changed files directly; do not run a script that adds autofix or rewrites unrelated files. Respect serial-suite and database restrictions. Record failing or unavailable required checks; do not report them as passes.
 
 ## Look for
 

@@ -43,24 +43,13 @@ Four reviews run in parallel, with at most two rebuilds after the initial review
 
 The [shared catalog](../../skills/catalog.md) belongs to all workflows. Factory's [selection rules](references/skills.md) assign those capabilities to its roles. Spec-writer resolves actual paths for the task and records the assignments in `spec.md`; each role reads its assigned files.
 
-| Agent | Shared capabilities |
-|---|---|
-| spec-writer | Project discovery; relevant stack and access-control skills. |
-| builder | Architecture, simplicity, verification, relevant stacks, and conditional access-control/UX/UI/frontend skills. |
-| reviewer-code | Architecture, review, simplicity, verification, and the applicable stack conventions. |
-| reviewer-security | Review, security-review, access-control review, and skills covering the changed trust boundaries. |
-| reviewer-ux | Verification, relevant UX guidance, the selected frontend skills, and frontend stack skills. |
-| reviewer-ui | Verification, relevant UI guidance, the selected frontend skills, and frontend stack skills. |
-| documenter | Feature documentation. |
-| approver | Verification and relevant access-control guidance; its decision policy stays in the agent. |
+Select the stack skills applicable to each changed path. A Laravel React/Inertia feature uses Laravel's backend skills and `laravel/frontend`; a Nest-only server fix does not need untouched frontend guidance. UI review follows actual rendered output, including server templates.
 
-A Laravel/React/Inertia feature can select all three stack skills. A backend-only Nest fix need not load an untouched client's React skill. UI review follows actual rendered output, including server templates. Missing required skills block the relevant stage; unused groups need not be installed.
-
-Shared skills use the invoking workflow's scope and reporting contract. Another workflow can reuse verification, access-control review, or stack guidance without factory job files.
+Factory roles contain their own discovery, evidence, security, UX/UI, and documentation instructions. When delivered, additional quality and frontend skills are selected from the installed catalog. An unavailable selected stack skill blocks the relevant stage; absent unused or optional groups do not.
 
 ## Setup and validation limits
 
-These files are source definitions. Host registration/rendering must expose the factory command and its eight child agents. Preserve the bundle's relative files when installing the command adapter, and supply the shared catalog and readable skill-library roots. The original external domain-driver initializer has not been updated for this repository layout.
+The distribution script preserves the bundle beside its command adapter, renders its eight child agents into `.claude/agents/` and `.codex/agents/`, and supplies a catalog beside the native skill folders. Laracanon and domain-driver install that generated delivery. See the [destination mapping](https://github.com/IsaacHatilima/skills/blob/main/distribution/targets.json).
 
 Child sources retain `name`, `description`, `claude-model`, `claude-tools`, `claude-effort`, `codex-model`, and `codex-reasoning-effort`. Skill loading does not change their model choices or write permissions.
 

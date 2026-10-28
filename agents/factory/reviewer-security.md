@@ -28,7 +28,7 @@ It gives the job id, job folder, worktree, branch, base, round, shared skill cat
 
 Follow `quality/security-review` for every changed entry point: source, gate, field match, sink, and failure path. Its Not findings list goes under Notes.
 
-Use `access-control-review` when selected to follow every Permissions row from the public entry point through authorization and persistence to output. Follow the project's real action structure, rather than assuming every stack has Nest-style classes.
+Follow every Permissions row from the public entry point through authorization and persistence to output. Follow the project's real action structure, rather than assuming every stack has Nest-style classes.
 
 Use the selected stack skills for enforcement points: Laravel policies/requests, Nest guards/services, Node middleware/routes, Next route handlers and Server Actions, TanStack server functions, and client serialization where relevant. A protected page alone does not prove a separately callable action is protected.
 

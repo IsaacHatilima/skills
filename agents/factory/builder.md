@@ -50,7 +50,7 @@ Before proving, do the finishing pass in `quality/simplicity` on your own diff. 
 
 ## Prove it
 
-Follow `feature-verification` and the selected stack skills. Run the prescribed package checks for what changed and record evidence for every acceptance criterion, including allowed/refused server cases.
+Follow the selected stack skills and the evidence requirements below. Run the prescribed package checks for what changed and record evidence for every acceptance criterion, including allowed/refused server cases.
 
 Run only the tests for the files and flows you changed, plus their direct callers. Never run the whole suite; CI does. Adding a comments section runs the comment tests and that page's tests, not the change-password tests. Rerun only what failed.
 

@@ -1,6 +1,6 @@
 ---
 name: database
-description: Use when writing NestJS persistence code with Prisma: setting up PrismaService, adding models or relations to schema.prisma, writing repository queries, fixing N+1 queries or over-fetching, wrapping writes in a transaction, or paginating a list.
+description: "Use when writing NestJS persistence code with Prisma: setting up PrismaService, adding models or relations to schema.prisma, writing repository queries, fixing N+1 queries or over-fetching, wrapping writes in a transaction, or paginating a list."
 ---
 
 # Database
