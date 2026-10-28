@@ -1,60 +1,51 @@
 ---
 name: security
-description: Use when adding or reviewing NestJS request validation, DTOs, authentication or authorization guards, JWT or refresh-token handling, rate limiting, or any response that returns entities or database rows to clients.
+description: Use when adding or reviewing NestJS authentication or permission guards, public routes, ownership or tenant scoping, rate limits, CORS or helmet, JWT or refresh-token handling, password hashing, or how secrets reach the app.
 ---
 
 # Security
 
-Applies to: `src/main.ts`, `src/app.module.ts`, `src/**/*.dto.ts`, `src/**/*.guard.ts`, `src/auth/**`, `src/**/*.controller.ts`.
+Applies to: `src/security/**`, `src/config/**`, `src/app.module.ts`, `src/main.ts`. Project guidance and existing conventions win over these defaults.
 
-Controller validation and types do not replace authorization inside the operation (`actions`). Secrets come from validated config (`operations`).
+## Guards
 
-## Rules
+- Register guards as `APP_GUARD` providers in `AppModule`, in this order: `ThrottlerGuard`, authentication, then permissions. They run in registration order, and e2e apps built from `AppModule` get them too.
+- Authentication denies by default. A `@Public()` decorator opts a route out, and the guard reads it with `Reflector.getAllAndOverride(KEY, [context.getHandler(), context.getClass()])`.
+- The authentication guard attaches the principal to the request, and handlers read it through a param decorator (see `controllers`). Never check `request.user` inside handlers.
+- A permission guard also runs on public routes, where no principal exists. Return early when the route needs no permission, and deny when the principal is missing.
 
-- Register one global `ValidationPipe` with `whitelist: true`, `forbidNonWhitelisted: true`, and `transform: true`. Provide it through `APP_PIPE` (not only `app.useGlobalPipes` in `main.ts`) so e2e apps built from `AppModule` validate identically (`testing`).
-- `whitelist` strips any property without a validator decorator. Give every DTO field at least one decorator (`@IsOptional()` or `@Allow()` when no other check applies), and use `@ValidateNested()` with `@Type(() => Child)` for nested objects.
-- A DTO checked by `ValidationPipe` must be a class; interfaces vanish at runtime and are never validated. If the project validates with schemas (zod, valibot), use its pipe instead (`StandardSchemaValidationPipe` in v12).
-- Query and path values arrive as strings. Use `@Type(() => Number)` with `@IsInt()`, or the parse pipes in `api`. Do not enable `transformOptions.enableImplicitConversion`: it coerces booleans with `Boolean(value)`, so `"false"` becomes `true`.
-- Never accept `@Body() body: any` or `@Query() query: any`.
-- Authenticate and authorize with guards, not `if (!req.user)` in handlers. Register authentication as a global `APP_GUARD` (default deny) with a `@Public()` opt-out, then a roles or permissions guard. `APP_GUARD` providers run in registration order, after middleware and before interceptors and pipes.
-- Read guard metadata with `Reflector.getAllAndOverride` over `[context.getHandler(), context.getClass()]`. Prefer `Reflector.createDecorator<T>()` over string-keyed `SetMetadata`.
-- A roles guard also runs on `@Public()` routes, where `request.user` is undefined. Return early when no role is required and deny, never throw a `TypeError`, when the user is missing.
-- A role guard does not stop tenant A reading tenant B's record. Check ownership where the entity is loaded, inside the operation.
-- Health and metrics endpoints need `@Public()` and `@SkipThrottle()`.
-- JWT: the secret comes from config (`getOrThrow`), never a literal. Use short-lived access tokens, set and verify `issuer` and `audience`, and keep the payload to `sub` and minimal claims, never password hashes or PII. The signature prevents tampering; the risk is staleness, so claims such as roles are old until expiry. Load the user in the strategy's `validate()` when role changes or deactivation must apply immediately, and reject tokens issued before `passwordChangedAt`.
-- Refresh tokens are random opaque values (`randomBytes(32)`), stored hashed (SHA-256 suffices for 256-bit random tokens), rotated on use, and revoked on logout and password change.
-- Rate limit with `@nestjs/throttler` as a global `APP_GUARD`. `ttl` is in milliseconds. Tighten login, password reset, OTP, and payment routes with `@Throttle({ default: { limit: 5, ttl: 60_000 } })`; the key must name a configured throttler.
-- Throttler `limit` and `ttl` accept functions of `ExecutionContext`; customize the key by overriding `getTracker()`. Multiple instances need shared (Redis) storage, and behind a proxy set `trust proxy` or every client shares one IP.
-- Never return entities or ORM rows from a controller. Use a response class with an allowlist: class-level `@Exclude()` with `@Expose()` on each exposed field, plus `@SerializeOptions({ type: UserResponse })`, and `ClassSerializerInterceptor` as a global `APP_INTERCEPTOR`.
-- `@Exclude()` on an entity is a denylist, so a new sensitive column leaks by default. It also does nothing for plain objects (Prisma results, raw queries), which have no class metadata; `type` converts them into the response class first.
-- `@Res()` switches the route to library mode and bypasses interceptors, including serialization. Return values instead.
-- Add `helmet`. JSON APIs rarely need output escaping; where user HTML is stored or served, sanitize with an allowlist library (`sanitize-html`) and never interpolate user input into HTML responses.
+## Ownership and scoping
 
-## Example
+- Guards decide what the actor may do. The action's queries decide which records they may touch: every `where` includes the owner or tenant from the actor, such as `{ id, workspaceId: actor.workspaceId }`.
+- A scoped lookup that finds nothing answers 404, so other tenants' ids stay hidden.
+- Owner, tenant, and role columns are set from the actor, never from input.
 
-```ts
-@Module({
-  providers: [
-    { provide: APP_PIPE, useValue: new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }) },
-    { provide: APP_GUARD, useClass: ThrottlerGuard }, // cheap rejection before auth work
-    { provide: APP_GUARD, useClass: JwtAuthGuard },   // default deny, honors @Public()
-    { provide: APP_GUARD, useClass: RolesGuard },
-    { provide: APP_INTERCEPTOR, useClass: ClassSerializerInterceptor },
-  ],
-})
-export class AppModule {}
+## Rate limits
 
-@Exclude()
-export class UserResponse {
-  @Expose() id: string;
-  @Expose() email: string;
-}
+- Configure `ThrottlerModule.forRoot([{ ttl: 60_000, limit: 100 }])`; `ttl` is in milliseconds. Apply stricter named presets with `@Throttle()` to login, password reset, verification, and email-sending routes.
+- Health checks get `@Public()` and `@SkipThrottle()`.
+- Several instances need shared throttler storage. Behind a proxy, set `trust proxy`, or every client shares the proxy's IP.
 
-@Get(':id')
-@SerializeOptions({ type: UserResponse })
-findOne(@Param('id', ParseUUIDPipe) id: string): Promise<User> {
-  return this.users.findById(id);
-}
-```
+## HTTP hardening
 
-Adapted from [nestjs-best-practices](https://github.com/IsaacHatilima/agent-nestjs-skills/tree/main/skills/nestjs-best-practices) (MIT).
+- Apply `helmet()` and CORS in the shared HTTP setup function (see `architecture`).
+- CORS allows an explicit origin list from config. Never pair `credentials: true` with a wildcard origin.
+
+## Credentials and secrets
+
+- Secrets come from the validated environment schema with minimum lengths. Never use literals or `|| 'default'` fallbacks, and keep `.env` out of git.
+- Hash passwords with the project's hasher, such as argon2. Never log or return them.
+- JWTs: take the secret from config, keep access tokens short-lived, verify issuer and audience, and limit claims to `sub` and ids. Check the session on each request when logout or revocation must apply at once.
+- Refresh and reset tokens are random (`randomBytes(32)`), stored hashed, single-use, rotated on use, and revoked on logout and password change.
+- Responses carry output DTOs only (see `dtos`), so hashes and secrets never leave the server.
+
+## Verify
+
+E2e tests cover:
+- 401 without a token, and with an expired or revoked one;
+- 403 without the permission;
+- 404 for another tenant's record;
+- 429 on a throttled route;
+- responses without secret fields.
+
+Adapted in part from [nestjs-best-practices](https://github.com/IsaacHatilima/agent-nestjs-skills/tree/main/skills/nestjs-best-practices) (MIT).
