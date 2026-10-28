@@ -1,95 +1,62 @@
 ---
 name: actions
-description: Use when creating, refactoring, or reviewing a Next.js Server Action, route handler, or the server-only operation behind it.
+description: Use when adding, changing, or reviewing a Next.js Server Action, a form or button that submits to one, or the revalidation, redirect, or returned state after it.
 ---
 
-# Next actions
+# Next Server Actions
 
-The common contract applies first, then Next conventions.
+Applies to: `app/<feature>/server/actions/*.action.ts` and the forms that call them. Project guidance (`AGENTS.md`, `CLAUDE.md`) wins over these defaults.
 
-## Common operation contract
+A Server Action is a public POST endpoint. For the app's own forms it replaces domain-driver's route handler and fetch hook. Route handlers (`app/api/**/route.ts`) remain the controller layer for other HTTP clients and are not covered here.
 
-An action means one business operation here. An application service or server-only function fulfilling that role follows the same contract. Preserve project naming and invocation style rather than adding an Action-to-Service wrapper solely to translate names. This describes the operation role, not every utility called Service.
+## Rules
 
-- Every operation parameter **MUST have an explicit, concrete type in its callable contract**. Prefer named DTO/data objects or concrete domain models. DTO fields must also have meaningful types.
-- Primitive and array/collection inputs are rare exceptions for a genuinely narrow contract. They still need declared types, including collection item types or shapes. Explain non-obvious exceptions in the plan or review.
-- Untyped parameters, broad catch-all types, unstructured payload bags, and call-site casts do not satisfy the contract. Use the language's type declarations or the project's checked JSDoc for JavaScript.
-- The request boundary validates input, applies required access rules, and maps it into typed operation data or resolves server-side models. Pass business data rather than the HTTP request object. Types alone do not validate data or establish permission.
+- **One action per file.** `server/actions/<Action><Entity>.action.ts` starts with `'use server'` and exports one async `<action><Entity>Action`.
+- **Check auth inside every action.** A page or layout check does not protect it. Take the caller from the session, not from arguments. When the client names a record, check the caller may change it.
+- **Validate with Zod.** `safeParse` the input with the feature's `schemas/<Action><Entity>.schema.ts` and pass on only `parsed.data`.
+- **Delegate.** Call the matching service's `handle()`. No queries or business rules in the action.
+- **Return expected failures, throw the rest.** Under `useActionState`, the action takes `(previousState, formData)` and returns a typed state. Throw only what the user can't fix; the nearest `error.tsx` shows it.
+- **Refresh, then redirect.** `revalidatePath(path)` refreshes one route. `updateTag(tag)` shows the user their write at once. `revalidateTag(tag, 'max')` refreshes in the background. `refresh()` re-renders the page without touching the cache. `redirect()` throws, so call it last and outside `try`.
+- **Return little.** Arguments and results must serialize: primitives, plain objects, arrays, `Date`, `Map`, `Set`, `FormData`. Class instances and ordinary functions don't. Return what the UI renders, never a whole record. Bodies over 1 MB fail unless `serverActions.bodySizeLimit` is raised.
 
-Follow documented project layers. The request adapter delegates; the operation owns business decisions and uses the project's existing data-access approach. Keep operations focused and separately named. Keep List, Show, Create, Update, and Delete on their existing contracts instead of hiding a bespoke operation inside them.
-
-## Keep methods small
-
-Use the project's complexity tool and threshold. Otherwise the default maximum is 5: start at 1, then add 1 per conditional branch, loop, case/match arm, catch, boolean conjunction/disjunction, and ternary. Count constructs rather than comments, strings, or type syntax. Else/default, null coalescing, and optional access add nothing.
-
-Above the threshold, extract named steps into private methods or unexported functions. Preserve public signatures, return types, error handling, and transaction ownership. Helpers share the owning operation's transaction context. Do not split a method at or below the threshold merely to add indirection.
-
-## Review
-
-Check the common contract and the stack conventions below together: operation scope, typed signature, DTO/model inputs, justified primitive/collection exceptions, stack-specific declarations, access rules, and persistence. Report the affected operation and smallest correction without extending the change to unrelated files.
-
-## Next conventions
-
-A framework Server Action or route handler is a callable request boundary. The business operation is the project's server-only service or typed function; it follows the same common contract as an Action class without requiring a particular class name or dependency-injection pattern.
-
-### Typed operation inputs
-
-- Validate FormData or other untrusted arguments at the boundary and map the validated result to a named DTO before invoking the operation.
-- Use a concrete callable contract such as `updateUser(input: UpdateUserDto): Promise<User>`. The DTO may be a class, interface, named type, or the named output type of the project's existing schema.
-- Obtain caller identity from trusted server context. Resolve any domain model on the server before passing it into the operation; transport data is not a model merely because it was cast to that type.
-- Primitive/collection inputs remain rare exceptions with concrete declared types and item/shape information. Do not use `any` or unchecked casts to bypass the contract.
-
-### Server boundary
-
-Keep server-only operation/data dependencies outside the client module graph. Apply required access checks at the callable boundary or its trusted server policy path; a page/layout check alone does not establish authorization for a Server Action.
-
-Preserve the project's operation naming, data-access, transaction, and revalidation conventions. Reuse an existing service/function instead of creating an Action-to-Service wrapper to imitate another stack.
-
-### Example
-
-Assume existing `User` and repository types, a `requireUser()` helper returning the authenticated `User`, and an `updateUserSchema` that validates the allowed `name` field. Use the project's actual auth, validator, and persistence modules.
-
-The internal operation stays in a server-only module:
+## Example
 
 ```ts
-// update-user.server.ts
-import 'server-only';
-import type { User } from './user.model';
-import { users } from './user.repository';
-
-export interface UpdateUserDto {
-  readonly name: string;
-}
-
-export async function updateUser(
-  user: User,
-  input: UpdateUserDto,
-): Promise<User> {
-  return users.update(user, input);
-}
-```
-
-The Server Action authenticates the caller, validates transport input, and passes a typed DTO to that operation:
-
-```ts
-// actions.ts
+// app/users/server/actions/UpdateUser.action.ts
 'use server';
 
-import { requireUser } from '@/lib/auth';
-import { updateUserSchema } from './update-user.schema';
-import { updateUser, type UpdateUserDto } from './update-user.server';
+import { revalidatePath } from 'next/cache';
+import { z } from 'zod';
+import { requireSession } from '@/lib/current-session';
+import { UpdateUserSchema, type UpdateUser } from '../../schemas/UpdateUser.schema';
+import { UpdateUserService } from '../services/UpdateUser.service';
 
-export async function updateProfile(formData: FormData) {
-  const user = await requireUser();
-  const input: UpdateUserDto = updateUserSchema.parse({
-    name: formData.get('name'),
-  });
-  const updated = await updateUser(user, input);
+export type UpdateUserState =
+  | { status: 'idle' }
+  | { status: 'invalid'; errors: Partial<Record<keyof UpdateUser, string[]>> }
+  | { status: 'saved'; name: string };
 
-  return { id: updated.id, name: updated.name };
+const service = new UpdateUserService();
+
+export async function updateUserAction(
+  _previous: UpdateUserState,
+  formData: FormData,
+): Promise<UpdateUserState> {
+  const session = await requireSession();
+
+  const parsed = UpdateUserSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    return { status: 'invalid', errors: z.flattenError(parsed.error).fieldErrors };
+  }
+
+  const user = await service.handle(session.user.id, parsed.data);
+  revalidatePath('/users');
+  return { status: 'saved', name: user.name };
 }
 ```
 
-The target model comes from trusted auth context, and the response projects public fields instead of serializing the entire model. Preserve any additional policy checks and revalidation the project requires.
+`requireSession()` redirects anonymous callers. The id comes from the session, so nobody can edit another user.
 
-Reference: [Next server boundaries and data security](https://nextjs.org/docs/app/guides/data-security).
+## Verify
+
+Call the action without a session and with invalid input. Neither may reach the service.
