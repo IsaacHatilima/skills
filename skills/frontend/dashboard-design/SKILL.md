@@ -5,7 +5,7 @@ description: Use when designing, building, or reviewing a dashboard, admin panel
 
 # Dashboard design
 
-A dashboard exists to display data. Three things separate one that was used from one that was only drawn: the data shapes the UI, each action is placed by how often it is needed, and the UI users can't see at first glance is designed too.
+A dashboard exists to display data. Four things separate one that was used from one that was only drawn: the data shapes the UI, each action is placed by how often it is needed, the UI users can't see at first glance is designed too, and every structural element carries information.
 
 ## 1. Let the data shape the form
 
@@ -50,6 +50,16 @@ Before calling a dense component done, specify its hidden layer:
 
 A new feature often belongs in one of these layers rather than on a new page.
 
+## 4. Make structure carry information
+
+Labels, numbers, borders, cards, and dividers should each tell the user something. Before adding one, say what it encodes on this screen.
+
+- A label above a heading that names the heading's own topic adds nothing. Let the heading stand alone.
+- Number items (01, 02, 03) only when they are a real sequence, such as steps or a timeline.
+- Group with spacing and headings first. Use a card only when the group is a separate object the user acts on.
+- Vary radius, border, and elevation with hierarchy, not one setting for everything.
+- Animate only in response to a user action, to show what changed.
+
 ## Common mistakes
 
 | Mistake | Fix |
@@ -62,5 +72,9 @@ A new feature often belongs in one of these layers rather than on a new page.
 | A permanent Remove button on every row of a member list | Reveal it on hover and focus, with a tooltip |
 | Several onboarding tips or a feature modal shown at once | One pointer, then the next step or a checklist |
 | Icon buttons without tooltips | A tooltip on every icon-only control |
+| A tracked-out all-caps label above every heading | Drop it, or turn it into the heading |
+| Meta strings joined with middle dots (`A · B · C`) | Separate fields with layout or label them |
+| Every section in an identical rounded card with the same soft shadow | Spacing and headings, with cards only for separate objects |
+| `→` appended to link and button text | A verb that says what happens |
 
-Source: Kole Jain, [The 3 dashboard UI flaws that give away you've NEVER built one](https://youtu.be/Ksx9C2-3yMo). Reference designs are in the [Figma file](https://www.kolejain.com/resources?scrollTo=dashboard-flaws).
+Source: Kole Jain, [The 3 dashboard UI flaws that give away you've NEVER built one](https://youtu.be/Ksx9C2-3yMo). Reference designs are in the [Figma file](https://www.kolejain.com/resources?scrollTo=dashboard-flaws). Section 4 and the last four mistakes are adapted from [frontend-design](https://github.com/anthropics/claude-plugins-official/tree/ea0a38e1d671aa18a30431c9160e31193dc9860b/plugins/frontend-design) (Apache-2.0).

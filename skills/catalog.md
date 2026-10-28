@@ -75,4 +75,14 @@ Stack-agnostic interface skills. Combine them with the stack skills for the code
 |---|---|---|
 | frontend/dashboard-design | `frontend/dashboard-design/SKILL.md` | Designing, building, or reviewing dashboards, admin panels, data tables, activity logs, share/settings popovers, or first-run experiences. |
 
+## Quality
+
+Stack-agnostic skills for writing and reviewing any change. Combine them with the stack skills for the code in scope.
+
+| Skill id | Canonical path | Use when |
+|---|---|---|
+| quality/simplicity | `quality/simplicity/SKILL.md` | Writing, refactoring, or reviewing code that should be easy for the next developer to read. |
+| quality/review | `quality/review/SKILL.md` | Reviewing a diff, branch, or pull request and deciding what blocks the merge. |
+| quality/security-review | `quality/security-review/SKILL.md` | Reviewing a change for security problems and deciding which ones block the merge. |
+
 Other skill groups are archived under `archive/skills/` and are not part of the library. Restore a group to `skills/` and register it here before a workflow selects it.
