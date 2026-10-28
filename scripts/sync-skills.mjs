@@ -10,7 +10,7 @@ export function targets(root = SOURCE_ROOT) {
   return JSON.parse(readFileSync(join(root, 'distribution/targets.json'), 'utf8'));
 }
 
-function inside(root, file) {
+export function inside(root, file) {
   if (isAbsolute(file) || file.split(/[\\/]/).some(part => part === '..' || part === '.' || part === '')) {
     throw new Error(`Expected a relative file path: ${file}`);
   }

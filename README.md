@@ -66,7 +66,7 @@ Each stack folder is self-contained so it can ship on its own. Its `actions` ski
 | `IsaacHatilima/laracanon` | `agents/factory/**` | `skills/laravel/**` | `resources/agent-library/` |
 | `IsaacHatilima/domain-driver` | `agents/factory/**` | Every active group except `laravel` | `agent-library/` |
 
-The [delivery workflow](.github/workflows/sync-skills.yml) runs after relevant changes merge to `main`, or manually from `main`. It builds a complete snapshot for each destination and opens or updates its `chore/sync-skills` PR. A consumer whose generated files have not changed gets no PR. Removing a source file removes it from the next delivered snapshot. `archive/` is excluded.
+The [delivery workflow](.github/workflows/sync-skills.yml) runs after relevant changes merge to `main`, or manually from `main`. It builds a complete snapshot for each destination and opens or updates its `chore/sync-skills` PR. A consumer whose generated files have not changed gets no PR or version bump. Removing a source file removes it from the next delivered snapshot. `archive/` is excluded.
 
 Factory's bundle stays together, its eight child agents are rendered for Claude Code and Codex, and native skill names include their group (`laravel-actions`, `nest-actions`). Each consumer receives a catalog containing only its delivered skills. The destination installers read `catalog.json`; neither maintains its own authored skill content.
 
@@ -77,9 +77,18 @@ Preview or bootstrap a delivery locally in a destination checkout:
 ```sh
 node scripts/sync-skills.mjs laracanon ../Laracanon
 node scripts/sync-skills.mjs domain-driver ../domain-driver
-node --test scripts/sync-skills.test.mjs
+node --test scripts/*.test.mjs
 ```
 
 The script owns only the configured generated directory and the explicitly listed legacy skill directories. It replaces old `resources/items/` in Laracanon and `factory/` in domain-driver. Make future skill and agent changes here, then merge the generated downstream PR after review.
 
 For initial setup, merge each consumer's installer migration first. The workflow checks for the required adapter before opening a delivery PR.
+
+## Automatic releases
+
+Every changed delivery includes a patch-version bump from the destination's default branch. Retries update the same pending version; several source edits in one open sync PR are released together. Unrelated skill groups cause no bump.
+
+- domain-driver: update `package.json` and both root versions in `package-lock.json`. Its existing npm trusted-publishing workflow builds, tests, and publishes after merge to `master`.
+- Laracanon: update its root `VERSION` file. After the complete `Tests` workflow passes for the current `main` commit, its release workflow pushes the matching `vX.Y.Z` tag and creates a GitHub release. Packagist's configured auto-update hook indexes that tag. Composer infers the version from the tag; no `version` field is added to `composer.json`.
+
+The consumer release migrations must merge before enabling the version-bumping delivery workflow. Normal skill updates then require only reviewing and merging the generated PR. Existing version tags are preserved.
