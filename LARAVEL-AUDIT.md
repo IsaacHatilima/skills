@@ -6,18 +6,26 @@ Audited and refactored 2026-10-27. Scope: `skills/laravel/`.
 
 These need your decision:
 
-- [ ] **Private methods:** `actions` recommends extracting private helper methods. The `insights` baseline enables `ForbiddenPrivateMethods` and requires an architecture score of 100. Either turn off the check or change the guidance. Running Insights on a real project would confirm whether the check fires.
 - [ ] **Complexity limit:** `actions` uses a per-method cyclomatic limit of 5 unless the project has its own tool. Insights is that tool, and it measures per class with a limit of 15. Choose which limit applies.
 - [ ] **`strict_types` scope:** it's required in action files, and every PHP example now uses it. Insights removes `DeclareStrictTypesSniff`, so nothing enforces it. Decide whether it's required in every file.
-- [ ] **`plans`:** it isn't Laravel-specific and assumes the superpowers `docs/superpowers/` paths. Keep it, move it to a general group, or delete it.
 - [ ] **`archive/skills/laravel/`:** its unique points (tenant and ownership scoping) now live in `actions` and `security`. Delete it when ready.
 
 Version claims to re-check before shipping:
-- Pest 5 needing PHP 8.4, and Pest 5.3's TIA and shard behaviour;
-- `#[Scope]` arriving in Laravel 12.4;
+- Pest 5 needing PHP 8.4;
 - Inertia 3 APIs.
 
 ## Resolved
+
+Change request of 2026-10-28:
+- **Private methods:** the baseline lists `ForbiddenPrivateMethods` under `remove`, so private helpers are allowed. A project whose own config forbids them gets the Insights finding, and the agent restructures the code.
+- **Config files:** `insights` and `phpstan` follow the project's configuration and never edit it. The baseline is copied only when the project has none.
+- **`plans`:** deleted. Planning belongs to the factory's spec-writer.
+- **Laravel 13 attributes:** jobs, models, controllers, form requests, commands, and container injection use attributes, checked against the 13.34 source.
+- **Naming:** every class except models and enums ends with its type (`CreateUserAction`, `DetectCommitLanguageJob`). Actions live in `app/Actions` or `app/Services`, whichever the project uses.
+- **Action results:** an action returns what its caller needs. Results headed for a response return an outbound Resource; a caller that keeps working with the record gets the model.
+- **Tests:** only the tests for affected files and flows run. TIA and sharding guidance is removed; CI owns full runs.
+
+Earlier:
 
 - **Duplication:**
   - Each rule now lives in one skill, and the others link to it.

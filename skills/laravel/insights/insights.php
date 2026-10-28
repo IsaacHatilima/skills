@@ -88,6 +88,7 @@ return [
         DisallowMixedTypeHintSniff::class,
         ForbiddenDefineFunctions::class,
         ForbiddenNormalClasses::class,
+        ForbiddenPrivateMethods::class,
         ForbiddenTraits::class,
         ParameterTypeHintSniff::class,
         PropertyTypeHintSniff::class,
@@ -97,9 +98,6 @@ return [
     ],
 
     'config' => [
-        ForbiddenPrivateMethods::class => [
-            'title' => 'The usage of private methods is not idiomatic in Laravel.',
-        ],
         LineLengthSniff::class => [
             'lineLengthLimit' => 160,
             'absoluteLineLimit' => 180,

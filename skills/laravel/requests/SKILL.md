@@ -10,10 +10,11 @@ Applies to: `app/Http/Requests/**`.
 ## Rules
 
 - Every endpoint that accepts input, including GET filters and pagination, has a FormRequest in `app/Http/Requests/{Domain}/`.
-  - Name it after the operation.
+  - Name it `{Operation}Request`, such as `CreateUserRequest`.
   - Share a `Save{Noun}Request` only when create and update have identical rules and authorization.
   - Lists use `List{Nouns}Request`.
 - A FormRequest only authorizes and validates. It doesn't normalize, build Data, query, write, or build responses.
+- Set request options with attributes from `Illuminate\Foundation\Http\Attributes` instead of properties: `#[StopOnFirstFailure]`, `#[ErrorBag('login')]`, `#[RedirectToRoute('users.index')]`.
 - `authorize()` calls the policy through `Gate::allows()`, passing the model class for create and the route-bound model otherwise. Parent scoping comes from `scopeBindings()` on the route (see `controllers`).
 - Declare explicit rules for every accepted payload and query field, including nested keys.
   - Choose `required`, `nullable`, and `sometimes` so that omitting a field and sending `null` mean what the contract says.

@@ -25,7 +25,7 @@ Every API JSON body has exactly these five keys:
   - Failures use the actual 401, 403, 404, 422, 429, or 500.
   - Never return an error as 200.
   - A 204 or 205 has no body: `return response()->noContent();`.
-- Read actions build Resources. Run the Resource's own response pipeline with an explicit `data` wrapper, then apply the envelope once. Field selection, pagination `meta`/`links`, and headers then survive.
+- Actions return the Resource (see `actions`). Run its own response pipeline with an explicit `data` wrapper, then apply the envelope once. Field selection, pagination `meta`/`links`, and headers then survive.
 - Never serialize a paginator by hand or wrap twice (`data.data`).
 - Format API errors centrally after Laravel renders the exception; controllers have no catch blocks.
 - Server errors never expose exception names, file paths, SQL, or traces. Reporting and logging stay in the existing handler.
@@ -50,7 +50,7 @@ $middleware->redirectGuestsTo(
 
 ```php
 return ApiResponse::success(
-    resourceResponse: $getUser->handle($user)->wrap('data')->toResponse($request),
+    resourceResponse: $createUser->handle($data)->wrap('data')->toResponse($request),
     message: __('User created successfully.'),
     status: Response::HTTP_CREATED,
 );

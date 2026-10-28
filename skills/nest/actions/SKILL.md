@@ -1,70 +1,66 @@
 ---
 name: actions
-description: Use when creating, refactoring, or reviewing a NestJS service or provider that performs a business operation, or deciding its typed DTO inputs and actor context.
+description: Use when creating, refactoring, or reviewing a NestJS action or service that performs one business operation, or deciding its typed input, actor, transaction, side effects, or return value.
 ---
 
-# Nest actions
+# Actions
 
-The common contract applies first, then Nest conventions.
+Applies to: `src/**/services/*.service.ts`, or `src/**/*.action.ts` in a project that uses that name. Project guidance and existing conventions win over these defaults.
 
-## Common operation contract
+An action is one business operation in its own class. domain-driver generates it as `services/CreateProject.service.ts` with `CreateProjectService.handle()`. A project that names them `CreateProjectAction` follows the same rules.
 
-An action means one business operation here. An application service or server-only function fulfilling that role follows the same contract. Preserve project naming and invocation style rather than adding an Action-to-Service wrapper solely to translate names. This describes the operation role, not every utility called Service.
+## Class shape
 
-- Every operation parameter **MUST have an explicit, concrete type in its callable contract**. Prefer named DTO/data objects or concrete domain models. DTO fields must also have meaningful types.
-- Primitive and array/collection inputs are rare exceptions for a genuinely narrow contract. They still need declared types, including collection item types or shapes. Explain non-obvious exceptions in the plan or review.
-- Untyped parameters, broad catch-all types, unstructured payload bags, and call-site casts do not satisfy the contract. Use the language's type declarations or the project's checked JSDoc for JavaScript.
-- The request boundary validates input, applies required access rules, and maps it into typed operation data or resolves server-side models. Pass business data rather than the HTTP request object. Types alone do not validate data or establish permission.
+- An `@Injectable()` class with one public `async handle()`, named verb, noun, then class type: `ArchiveProjectService`.
+- A new operation is a new class (`npx domain-driver make:action projects/Project archiveProject`), never a new method on another action or a branch inside List or Show.
+- Inject repositories, other actions, and queues through the constructor. Keep per-call state in local variables.
 
-Follow documented project layers. The request adapter delegates; the operation owns business decisions and uses the project's existing data-access approach. Keep operations focused and separately named. Keep List, Show, Create, Update, and Delete on their existing contracts instead of hiding a bespoke operation inside them.
+## Inputs
 
-## Keep methods small
+- Request data arrives as the schema's inferred type, such as `CreateProject`, already validated and normalized (see `dtos`). Never accept a request object, `any`, or a loose record.
+- Pass the actor explicitly, as in `handle(actor: AuthPrincipal, data: CreateProject)`. Route ids arrive as typed parameters.
+- Owner, tenant, and team ids come from the actor or a loaded parent, never from input. Every read is scoped to records the actor may see (see `security`).
 
-Use the project's complexity tool and threshold. Otherwise the default maximum is 5: start at 1, then add 1 per conditional branch, loop, case/match arm, catch, boolean conjunction/disjunction, and ternary. Count constructs rather than comments, strings, or type syntax. Else/default, null coalescing, and optional access add nothing.
+## Persistence and transactions
 
-Above the threshold, extract named steps into private methods or unexported functions. Preserve public signatures, return types, error handling, and transaction ownership. Helpers share the owning operation's transaction context. Do not split a method at or below the threshold merely to add indirection.
+- Repositories run the queries (see `database`); the action makes the decisions.
+- The action owns the transaction. When it writes more than once, it opens `this.prisma.$transaction(async (tx) => …)` once and passes `tx` to every repository call inside. Repositories and nested actions never open their own. A project that uses `@Transactional()` from `@nestjs-cls/transactional` keeps it.
+- Hash passwords and call external services before the transaction opens.
+- Jobs, events, and mail that depend on the write start after `$transaction` resolves, never inside the callback (see `jobs`).
 
-## Review
+## Results and failures
 
-Check the common contract and the stack conventions below together: operation scope, typed signature, DTO/model inputs, justified primitive/collection exceptions, stack-specific declarations, access rules, and persistence. Report the affected operation and smallest correction without extending the change to unrelated files.
+- Return what the caller needs, typed: usually the output DTO mapped from the Prisma result (see `dtos`). Deletes return `void`, and checks return `boolean`. Never return a Prisma row.
+- Broken business rules throw the project's coded error, such as `notFound('Project')` when a scoped lookup returns `null`. The exception filter renders it (see `api-responses`).
 
-## Nest conventions
-
-Use the project's service/provider as the business-operation implementation. Preserve existing method names such as `handle` or `execute`, provider registration, and dependency injection. A separate Action wrapper is unnecessary when the service already owns that operation.
-
-### Typed operation inputs
-
-- The controller or transport handler performs runtime validation with the project's existing pipe/schema setup and passes a concrete DTO to the service.
-- A DTO may be the project's class, interface, or named schema-output type. Its fields have concrete types. Runtime validation is still required at the network boundary.
-- Pass an additional typed domain/auth-context object when the operation needs one, for example `handle(actor: AuthenticatedUser, input: ArchiveCommentDto): Promise<Comment>`. Resolve the actor through trusted authentication context.
-- Primitive/collection arguments remain rare, explicitly typed exceptions. Use concrete item types such as `ItemDto[]`, not `any[]`, an untyped request object, or a loosely shaped payload.
-
-### Scope and transactions
-
-Follow the project's operation-per-class or service-module convention. Keep the requested operation focused, and extract implementation steps into private helpers rather than unrelated new public methods.
-
-Preserve an existing transaction decorator/context on the public operation when extracting helpers. Do not introduce a transaction package just to match an example. The controller's validation and the service's types do not replace server authorization.
-
-### Example
-
-Assume the project already defines a `User` model, an `UpdateUserDto` with a typed `name` field, and a registered `UserRepository` provider. The controller validates the DTO and authorizes the model before calling this service.
+## Example
 
 ```ts
-import { Injectable } from '@nestjs/common';
-import type { User } from './user.model';
-import type { UpdateUserDto } from './update-user.dto';
-import { UserRepository } from './user.repository';
-
 @Injectable()
-export class UpdateUserService {
-  constructor(private readonly users: UserRepository) {}
+export class CreateProjectService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly createProject: CreateProjectRepository,
+    private readonly addMember: AddProjectMemberRepository,
+    @InjectQueue('projects') private readonly queue: Queue,
+  ) {}
 
-  async handle(user: User, input: UpdateUserDto): Promise<User> {
-    return this.users.update(user, input);
+  async handle(actor: AuthPrincipal, data: CreateProject): Promise<Project> {
+    const project = await this.prisma.$transaction(async (tx) => {
+      const created = await this.createProject.handle({ name: data.name, ownerId: actor.userId }, tx);
+      await this.addMember.handle({ projectId: created.id, userId: actor.userId, role: 'owner' }, tx);
+      return created;
+    });
+
+    await this.queue.add('index', { projectId: project.id }, { jobId: `index-${project.id}` });
+
+    return toProject(project);
   }
 }
 ```
 
-The service receives concrete business data, not a request object or loose payload. Keep any additional operation-level policy checks and transaction boundary required by the project.
+The project and its owner membership commit together, and the job is queued only after the commit.
 
-Reference: [Nest providers and services](https://docs.nestjs.com/providers).
+## Verify
+
+Unit tests fake the repositories, `$transaction`, and the queue, and cover each branch and error. E2e tests prove the writes commit and roll back together (see `tests`).

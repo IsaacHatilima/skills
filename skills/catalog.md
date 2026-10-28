@@ -21,7 +21,7 @@ A skill id is `<group>/<name>`, which is its folder path under the library root.
 
 ## Stack actions
 
-Each stack folder carries its own self-contained action skill: the common operation contract plus that stack's conventions. Select by the runtime that owns the business operation, not every dependency in the repository. A Laravel backend with a React UI uses `laravel/actions`.
+Each stack folder has its own action skill, written only for that framework. Select by the runtime that owns the business operation, not every dependency in the repository. A Laravel backend with a React UI uses `laravel/actions`.
 
 | Stack | Skill id | Canonical path |
 |---|---|---|
@@ -38,34 +38,37 @@ Laravel conventions, originally ported from Laracanon. Each skill lists the path
 |---|---|---|
 | laravel/actions | `laravel/actions/SKILL.md` | Creating, refactoring, or reviewing a Laravel action or operation service that queries, writes, or makes a business decision. |
 | laravel/api-responses | `laravel/api-responses/SKILL.md` | Adding or changing a Laravel JSON API endpoint, its response envelope or pagination output, or how API errors such as 401, 403, 404, 422, 429, and 500 are rendered. |
-| laravel/architecture | `laravel/architecture/SKILL.md` | Placing new Laravel behaviour, planning a feature or refactor, or reviewing where queries, validation, authorization, and responses belong. |
+| laravel/architecture | `laravel/architecture/SKILL.md` | Placing new Laravel behaviour, naming a new class, planning a feature or refactor, or reviewing where queries, validation, authorization, and responses belong. |
 | laravel/controllers | `laravel/controllers/SKILL.md` | Adding or changing Laravel controllers or routes, wiring a FormRequest and action to an endpoint, or choosing between an API response, Inertia page, and redirect. |
 | laravel/data | `laravel/data/SKILL.md` | Creating or changing Laravel input Data classes, output Resources, or the frontend-facing representation of a model, including partial updates. |
 | laravel/eloquent-strictness | `laravel/eloquent-strictness/SKILL.md` | Enabling Eloquent strict mode, or when fixing a lazy-loading, missing-attribute, or discarded-attribute violation or an N+1 query. |
 | laravel/enums | `laravel/enums/SKILL.md` | Adding or changing a PHP enum used by a Laravel model, or its stored values, labels, validation, or select options. |
 | laravel/frontend | `laravel/frontend/SKILL.md` | Adding or changing React or Inertia pages, page props, Wayfinder routes, forms, or shared UI in a Laravel application's resources/js. |
-| laravel/insights | `laravel/insights/SKILL.md` | Adding, configuring, or running PHP Insights code-quality checks in a Laravel application. |
+| laravel/insights | `laravel/insights/SKILL.md` | Adding or running PHP Insights in a Laravel application, or when Insights reports a finding. |
 | laravel/jobs | `laravel/jobs/SKILL.md` | Adding or reviewing Laravel queued jobs, listeners, or background work such as exports, reports, webhooks, imports, and notifications, or when a request is slow because it does work the user doesn't need to wait for. |
 | laravel/migrations | `laravel/migrations/SKILL.md` | Adding or changing a Laravel migration, table, column, index, foreign key, or schema backfill. |
 | laravel/models | `laravel/models/SKILL.md` | Creating or changing an Eloquent model, or its casts, relationships, scopes, fillable columns, or PHPDoc properties. |
-| laravel/phpstan | `laravel/phpstan/SKILL.md` | Adding, configuring, or running PHPStan or Larastan static analysis in a Laravel application. |
-| laravel/plans | `laravel/plans/SKILL.md` | Writing or reviewing an implementation plan for a Laravel change before coding it. |
+| laravel/phpstan | `laravel/phpstan/SKILL.md` | Adding or running PHPStan or Larastan in a Laravel application, or when PHPStan reports an error. |
 | laravel/requests | `laravel/requests/SKILL.md` | Adding or changing a Laravel FormRequest, validation rules, request authorization, or query parameters such as filters, sorting, and pagination. |
 | laravel/security | `laravel/security/SKILL.md` | Adding or reviewing Laravel authorization, policies, authentication, API tokens, CORS, CSRF exceptions, file uploads, raw queries, HTML output, rate limits, or production configuration, or before deploying a Laravel application. |
-| laravel/tests | `laravel/tests/SKILL.md` | Writing, choosing, or running tests for a Laravel application, including Pest unit, feature, action, HTTP, and browser tests, and focused or sharded test runs. |
+| laravel/tests | `laravel/tests/SKILL.md` | Writing, choosing, or running tests for a Laravel application, including Pest unit, feature, action, HTTP, and browser tests, or deciding which tests a change needs. |
 
 ## Nest
 
-NestJS conventions adapted from nestjs-best-practices (MIT). Business operations use `nest/actions`.
+NestJS conventions for Prisma and Zod, with the file layout domain-driver generates. Business operations use `nest/actions`.
 
 | Skill id | Canonical path | Use when |
 |---|---|---|
-| nest/architecture | `nest/architecture/SKILL.md` | Structuring modules, sharing providers, fixing dependency-resolution or circular import errors, choosing provider scopes, injecting interfaces, or decoupling features with events. |
-| nest/security | `nest/security/SKILL.md` | Adding or reviewing request validation, guards, JWT and refresh tokens, rate limiting, or responses that could leak entity fields or secrets. |
-| nest/api | `nest/api/SKILL.md` | Adding exception filters and domain errors, handling async and event failures, writing interceptors, using built-in pipes, or versioning an HTTP API. |
-| nest/data | `nest/data/SKILL.md` | Writing TypeORM or Prisma persistence: transactions, N+1 queries, pagination and indexes, caching, and migrations. |
-| nest/testing | `nest/testing/SKILL.md` | Writing unit and e2e tests with TestingModule, provider overrides, supertest, an isolated test database, and faked external services. |
-| nest/operations | `nest/operations/SKILL.md` | Setting up validated config, structured logging, lifecycle hooks and graceful shutdown, health checks, BullMQ queues, or microservice message handlers. |
+| nest/actions | `nest/actions/SKILL.md` | Creating or reviewing a class that runs one business operation: its input, actor, transaction, side effects, and return value. |
+| nest/api-responses | `nest/api-responses/SKILL.md` | Changing the response envelope, exception filter, error codes, or paginated output, or how validation, auth, Prisma, and unexpected errors reach the client. |
+| nest/architecture | `nest/architecture/SKILL.md` | Adding a feature or module, deciding where code belongs, sharing providers, fixing dependency-resolution or circular-import errors, using events, or setting up config validation, logging, and shutdown. |
+| nest/controllers | `nest/controllers/SKILL.md` | Adding or changing a controller or route, wiring DTOs, pipes, and guards, choosing an HTTP method or status, or reading the actor. |
+| nest/database | `nest/database/SKILL.md` | Setting up Prisma, changing schema conventions, writing repository queries, fixing N+1 queries or over-fetching, using transactions, or paginating. |
+| nest/dtos | `nest/dtos/SKILL.md` | Creating Zod request schemas and DTOs, query or path validation, or partial updates, or deciding what an endpoint returns and how a Prisma result becomes it. |
+| nest/jobs | `nest/jobs/SKILL.md` | Adding BullMQ background work or recurring jobs, or when a request is slow because of work the client needn't wait for. |
+| nest/migrations | `nest/migrations/SKILL.md` | Changing Prisma models or constraints, writing backfills, or running migrations locally, in CI, or in production. |
+| nest/security | `nest/security/SKILL.md` | Adding or reviewing auth and permission guards, public routes, ownership and tenant scoping, rate limits, CORS and helmet, JWT and refresh tokens, passwords, or secrets. |
+| nest/tests | `nest/tests/SKILL.md` | Writing or running unit and e2e tests, using an isolated Prisma test database, overriding providers, or deciding which tests a change needs. |
 
 ## Frontend
 
@@ -73,7 +76,9 @@ Stack-agnostic interface skills. Combine them with the stack skills for the code
 
 | Skill id | Canonical path | Use when |
 |---|---|---|
-| frontend/dashboard-design | `frontend/dashboard-design/SKILL.md` | Designing, building, or reviewing dashboards, admin panels, data tables, activity logs, share/settings popovers, or first-run experiences. |
+| frontend/app-shell | `frontend/app-shell/SKILL.md` | Building or reviewing the frame around signed-in screens: the route after login, sidebar, header, page layout, density, and page-level loading, empty, and error states. |
+| frontend/overlays | `frontend/overlays/SKILL.md` | Choosing, building, or reviewing dialogs, drawers, sheets, popovers, menus, tooltips, toasts, and confirmations: what opens them, focus, dismissal, stacking, and mobile behaviour. |
+| frontend/data-display | `frontend/data-display/SKILL.md` | Designing, building, or reviewing data tables, lists, activity or audit logs, timelines, KPI tiles, and summary charts. |
 
 ## Quality
 
