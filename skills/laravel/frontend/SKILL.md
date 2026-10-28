@@ -5,7 +5,7 @@ description: Use when adding or changing React or Inertia pages, page props, Way
 
 # Frontend
 
-Applies to: `resources/js/**`. Apply each tool's rules only if that tool is installed; don't add Inertia, Wayfinder, or shadcn to an application without them. For dashboard layout and interaction design, see `frontend/dashboard-design`.
+Applies to: `resources/js/**`. Apply each tool's rules only if that tool is installed; don't add Inertia, Wayfinder, or shadcn to an application without them. For the app shell, overlays, and tables, see `frontend/app-shell`, `frontend/overlays`, and `frontend/data-display`.
 
 ## Structure
 

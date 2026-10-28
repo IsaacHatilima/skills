@@ -7,28 +7,27 @@ description: Use when adding or reviewing Laravel authorization, policies, authe
 
 Applies to: `app/Policies/**`, `app/Http/**`, `app/Providers/**`, `bootstrap/app.php`, `config/**`, `routes/**`.
 
-On Laravel 11+, middleware, CSRF, and proxies are configured in `bootstrap/app.php`. Gates, policies, and rate limiters are registered in `AppServiceProvider::boot()`. Older applications keep their own provider and Kernel classes.
+Middleware, CSRF, and proxies are configured in `bootstrap/app.php`. Gates and rate limiters are registered in `AppServiceProvider::boot()`.
 
 ## Authorization
 
-- Every model a user can act on has a policy in `app/Policies/` with one method per ability (`viewAny`, `view`, `create`, `update`, `delete`, `restore`, `forceDelete`). Rely on policy discovery, or register with `Gate::policy()` when names don't follow convention.
+- Every model a user can act on has a policy in `app/Policies/` with one method per ability (`viewAny`, `view`, `create`, `update`, `delete`, `restore`, `forceDelete`). Rely on policy discovery; when names don't follow convention, add `#[UsePolicy(UserPolicy::class)]` to the model.
 - Policy methods return `bool` from the user, the model, and its loaded attributes. A check that needs a query, such as team membership, calls an injected action (see `architecture`).
 - Use a guest-nullable `?User $user` parameter only for abilities that guests may hold.
 - Use a policy's `before()` or `Gate::before()` for super-admin overrides. It returns `true` to grant and `null` to fall through to the normal check. Returning `false` denies everything, including the abilities the method never meant to cover.
-- Authorize in the FormRequest's `authorize()`, or with `Gate::authorize()` before the action when there is no FormRequest (see `requests`, `controllers`). Route-model binding finds a record; it never proves the caller may use it.
-- Scope nested routes to their parent with `scopeBindings()` so a child cannot be resolved through another tenant's parent.
+- Authorize in the FormRequest's `authorize()`, or with `#[Authorize]` on the controller method when there is no FormRequest (see `requests`, `controllers`). Route-model binding finds a record; it never proves the caller may use it. Nested routes use `scopeBindings()` so a child can't be resolved through another tenant's parent.
 
 ## Privileged fields and mass assignment
 
-- Keep privileged columns out of `#[Fillable]`/`$fillable`: role, admin and verification flags, owner, tenant, and team IDs. Never use `$guarded = []`.
+- Keep privileged columns out of `#[Fillable]`: role, admin and verification flags, owner, tenant, and team IDs. Never unguard the model.
 - Never take those values from request input. The action sets them from the authenticated actor or the route-bound parent, either through relationship creation (`$team->projects()->create([...])`) or by explicit attribute assignment.
-- Hide secrets from serialization with `$hidden`: password, remember token, two-factor secrets and recovery codes. Resources remain the output contract; `$hidden` is the backstop.
+- Hide secrets from serialization with `#[Hidden]`: password, remember token, two-factor secrets and recovery codes. Resources remain the output contract; `#[Hidden]` is the backstop.
 - Use `encrypted` casts for sensitive values stored at rest. Rotate `APP_KEY` with `APP_PREVIOUS_KEYS` so existing encrypted values stay readable.
 
 ## Queries and output
 
 - Pass user input to queries only as bindings: `whereRaw('email = ?', [$email])`, never interpolated into `whereRaw`, `selectRaw`, `orderByRaw`, `DB::statement`, or `DB::select`.
-- Column names cannot be bound. A user-chosen sort or filter column is validated against an allowlist (`Rule::in([...])`) in the FormRequest and mapped to a real column in the action.
+- Column names can't be bound. The FormRequest allowlists user-chosen sort and filter values, and the action maps them to real columns (see `requests`).
 - In Blade, `{{ }}` escapes and `{!! !!}` does not. Use `{!! !!}` only for HTML the application generated or sanitized with an allowlist sanitizer such as HTMLPurifier. Use `@js()` to put data into a script context.
 - In React, JSX escapes by default. `dangerouslySetInnerHTML` takes only server-sanitized HTML.
 

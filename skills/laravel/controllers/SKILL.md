@@ -10,14 +10,14 @@ Applies to: `app/Http/Controllers/**`, `routes/**`.
 ## Rules
 
 - A controller method:
-  - injects the FormRequest, route-bound models, and actions as parameters;
+  - injects the FormRequest, route-bound models, the actor (`#[CurrentUser] User $user`), and actions as parameters;
   - builds input with `Data::fromRequest()`;
-  - invokes actions;
+  - calls actions;
   - returns a response.
 
-  Single-action controllers use `__invoke`. Queries, relation loads, and mapping models to arrays belong to actions.
-- Without a FormRequest, call `Gate::authorize()` before any action.
-- A write endpoint invokes one write action, which composes any related writes itself. When the response needs a representation, a read action builds it from the returned model. Read endpoints may call several read actions.
+  Single-action controllers use `__invoke`. Queries, relation loads, and formatting belong to actions and Resources.
+- Declare controller middleware with `#[Middleware('auth')]` instead of a `middleware()` method. Without a FormRequest, authorize with `#[Authorize('view', 'user')]`: the ability, then the route parameter or model class. Both come from `Illuminate\Routing\Attributes\Controllers`.
+- A write endpoint calls one write action, which composes any related writes and returns what the response needs (see `actions`). Read endpoints may call several read actions.
 - Pass actor and parent models explicitly. Never pass request arrays or plucked fields to actions.
 - Use separate web and API controllers when their responses differ; both reuse the same actions. Don't choose the response type by inspecting headers.
 - Routes:
@@ -29,11 +29,8 @@ Applies to: `app/Http/Controllers/**`, `routes/**`.
 
 ## Responses
 
-- **API:**
-  - Serialize the Resource with an explicit `data` wrapper and pass it to `ApiResponse::success()` with a translated message.
-  - Use status 200 for reads and updates, 201 for synchronous creation, and 202 for queued work. A 204 stays bodyless.
-  - Errors are formatted centrally (see `api-responses`).
-- **Inertia:** reads render Resource-backed props plus any enum options and page metadata.
+- **API:** pass the action's Resource, wrapped under `data`, to `ApiResponse::success()` with a translated message. Use 200 for reads and updates, 201 for synchronous creation, and 202 for queued work. A 204 stays bodyless. Errors are formatted centrally (see `api-responses`).
+- **Inertia:** pass the actions' Resources as props, plus any enum options and page metadata.
 - **Web writes:**
   - Redirect with `to_route()` or `back()`.
   - Flash translated feedback only when a deliberate change would otherwise be unclear. Background writes, such as marking a notice read, need none.
@@ -41,30 +38,7 @@ Applies to: `app/Http/Controllers/**`, `routes/**`.
 
 ## Example
 
-Both controllers reuse `CreateUserRequest` (see `requests`), `CreateUserData` (see `data`), and `CreateUser` (see `actions`). `GetUser` is a read action that returns `UserResource::fromModel($user)`.
-
-```php
-<?php
-
-declare(strict_types=1);
-
-namespace App\Http\Controllers\Users;
-
-use App\Actions\Users\CreateUser;
-use App\Data\Users\CreateUserData;
-use App\Http\Requests\Users\CreateUserRequest;
-use Illuminate\Http\RedirectResponse;
-
-final class CreateUserController
-{
-    public function __invoke(CreateUserRequest $request, CreateUser $create): RedirectResponse
-    {
-        $create->handle(CreateUserData::fromRequest($request));
-
-        return back();
-    }
-}
-```
+This API controller reuses `CreateUserRequest` (see `requests`), `CreateUserData` (see `data`), and `CreateUserAction` (see `actions`), which returns a `UserResource`. The web controller calls the same action and returns `back()`.
 
 ```php
 <?php
@@ -73,8 +47,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\Users;
 
-use App\Actions\Users\CreateUser;
-use App\Actions\Users\GetUser;
+use App\Actions\Users\CreateUserAction;
 use App\Data\Users\CreateUserData;
 use App\Http\Requests\Users\CreateUserRequest;
 use App\Http\Responses\ApiResponse;
@@ -83,12 +56,12 @@ use Symfony\Component\HttpFoundation\Response;
 
 final class CreateUserController
 {
-    public function __invoke(CreateUserRequest $request, CreateUser $create, GetUser $getUser): JsonResponse
+    public function __invoke(CreateUserRequest $request, CreateUserAction $createUser): JsonResponse
     {
-        $user = $create->handle(CreateUserData::fromRequest($request));
+        $user = $createUser->handle(CreateUserData::fromRequest($request));
 
         return ApiResponse::success(
-            resourceResponse: $getUser->handle($user)->wrap('data')->toResponse($request),
+            resourceResponse: $user->wrap('data')->toResponse($request),
             message: __('User created successfully.'),
             status: Response::HTTP_CREATED,
         );
@@ -96,7 +69,7 @@ final class CreateUserController
 }
 ```
 
-`wrap('data')->toResponse()` is the Spatie Resource response API. Another Resource implementation uses its own equivalent.
+`wrap('data')->toResponse()` is the Spatie Resource response API.
 
 ## Verify
 

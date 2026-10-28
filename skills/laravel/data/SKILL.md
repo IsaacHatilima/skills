@@ -5,11 +5,11 @@ description: Use when creating or changing Laravel input Data classes, output Re
 
 # Data
 
-Applies to: `app/Data/**`. Uses `spatie/laravel-data`. If it's missing, install it with Composer. Publish `data-config` only for custom settings.
+Applies to: `app/Data/**`. Uses `spatie/laravel-data`; if it's missing, install it with Composer. Publish `data-config` only for custom settings.
 
 ## Input Data
 
-- Lives in `app/Data/{Domain}/`, with an operation-specific name and readonly properties.
+- Lives in `app/Data/{Domain}/` as `{Operation}Data`, with readonly properties.
 - Built only through an explicit, typed `fromRequest()` that the controller calls after the FormRequest has authorized and validated. Don't use automatic request injection, container resolution, or `from($request)`.
 - The factory reads only validated, known fields through typed getters such as `$request->string('name')`. It owns domain normalization: trimming, letter case, and turning blank strings into null. Passwords and other opaque values pass through untouched.
 - Jobs and commands build the same Data through their own factory.
@@ -18,8 +18,9 @@ Applies to: `app/Data/**`. Uses `spatie/laravel-data`. If it's missing, install 
 
 ## Output Resources
 
-- Also live in `app/Data/{Domain}/`, with camelCase properties matching the frontend type and an explicit, typed `fromModel()`.
-- Read only selected attributes and already-loaded relations or counts. The read action loads them first; Resources never query or lazy-load.
+- Also live in `app/Data/{Domain}/`, named `{Noun}Resource`, with camelCase properties matching the frontend type and an explicit, typed `fromModel()`.
+- A Resource is the outbound shape for API JSON and Inertia props. Formatting and derived values, such as labels, full names, and money from minor units, are computed in `fromModel()`, so controllers and pages receive them ready.
+- Read only selected attributes and already-loaded relations or counts. The action that returns the Resource loads them first (see `actions`); Resources never query or lazy-load.
 
 ## Example
 
