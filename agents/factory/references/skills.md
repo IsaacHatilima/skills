@@ -18,6 +18,10 @@ Every role reads only its assigned skills. Missing required files block implemen
 | ux-review | builder, reviewer-ux | A changed screen, template, or interactive user flow. |
 | ui-review | builder, reviewer-ui | A changed visual surface, including server-rendered HTML. |
 | feature-documentation | documenter | Every job that reaches documentation. |
+| quality/simplicity | builder, reviewer-code | The task changes application code. |
+| quality/review | reviewer-code, reviewer-security | Every review of a code change. |
+| quality/security-review | reviewer-security | Every review of a code change. |
+| frontend/dashboard-design | builder, reviewer-ux, reviewer-ui | A changed dashboard, admin or settings screen, data table, activity log, or first-run flow. |
 
 When domain-driver is selected, also resolve its installed project-specific `domain-driver` skill and list it for spec-writer, builder, and reviewer-code. Treat its absence as a missing prerequisite.
 

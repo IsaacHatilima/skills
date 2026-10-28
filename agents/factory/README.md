@@ -46,11 +46,11 @@ The [shared catalog](../../skills/catalog.md) belongs to all workflows. Factory'
 | Agent | Shared capabilities |
 |---|---|
 | spec-writer | Project discovery; relevant stack and access-control/scaffold skills. |
-| builder | Architecture, verification, relevant stacks, and conditional access-control/UX/UI/scaffolding. |
-| reviewer-code | Architecture, verification, and the applicable stack/scaffold conventions. |
-| reviewer-security | Access-control review and skills covering the changed trust boundaries. |
-| reviewer-ux | Verification, relevant UX guidance, and frontend stack skills. |
-| reviewer-ui | Verification, relevant UI guidance, and frontend stack skills. |
+| builder | Architecture, simplicity, verification, relevant stacks, and conditional access-control/UX/UI/dashboard-design/scaffolding. |
+| reviewer-code | Architecture, review, simplicity, verification, and the applicable stack/scaffold conventions. |
+| reviewer-security | Review, security-review, access-control review, and skills covering the changed trust boundaries. |
+| reviewer-ux | Verification, relevant UX guidance, dashboard-design, and frontend stack skills. |
+| reviewer-ui | Verification, relevant UI guidance, dashboard-design, and frontend stack skills. |
 | documenter | Feature documentation. |
 | approver | Verification and relevant access-control guidance; its decision policy stays in the agent. |
 

@@ -32,11 +32,15 @@ Use `feature-verification` and the package commands from Project for the changed
 
 ## Look for
 
+Use `quality/review` to decide what blocks and to verify each finding before you write it.
+
 - Correct behaviour against the requirements, API/page-prop contract, and acceptance criteria, including errors, edge cases, awaits, and allowed/refused server cases.
 
 - Tests and checks that establish the changed behaviour, without weakened, skipped, or deleted coverage used to hide a failure.
 
 - the stack's `actions` skill (`laravel/actions`, `nest/actions`, `next/actions`, `tanstack-start/actions`) and the relevant stack skills: existing layers, focused actions, small methods, correct transaction boundaries, and reuse of maintained helpers/components.
+
+- `quality/simplicity`: complexity the change introduces where a simpler version behaves the same, such as nested conditionals, pass-through methods, unused parameters, defensive checks the types already rule out, unrequested options, and misleading comments.
 
 - The declared scaffold strategy. Apply domain-driver rules only when `domain-driver-scaffolding` was selected. Check generated output, cleanup, later generation, route/registration completion, and placeholders against the chosen tool and project guidance.
 
@@ -59,4 +63,4 @@ VERDICT: PASS
 <non-blocking observations and explicit coverage limits>
 ```
 
-The first line is exactly `VERDICT: PASS` or `VERDICT: CHANGES`. Use CHANGES for unmet required checks, introduced bugs, missing required evidence/skills, spec gaps, or violations of the selected project's conventions. Compare a suspected regression to the base. Keep pre-existing observations and style preferences under Notes. Write `None.` under Findings when there are none.
+The first line is exactly `VERDICT: PASS` or `VERDICT: CHANGES`. Use CHANGES for unmet required checks, introduced bugs, introduced complexity with a simpler equivalent, swallowed errors, missing required evidence/skills, spec gaps, or violations of the selected project's conventions. Compare a suspected regression to the base. Keep pre-existing observations and style preferences under Notes. Write `None.` under Findings when there are none.

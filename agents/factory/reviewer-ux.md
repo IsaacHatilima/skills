@@ -36,7 +36,7 @@ Do not sign in or submit forms. Review protected pages in source for the roles i
 
 ## Review the flow
 
-Apply `ux-review` to the intended path, role-specific controls, loading/empty/error/refused states, plain copy, keyboard/focus behaviour, labels, and narrow-screen use. Use `feature-verification` to distinguish evidence from assumptions.
+Apply `ux-review` to the intended path, role-specific controls, loading/empty/error/refused states, plain copy, keyboard/focus behaviour, labels, and narrow-screen use. Use `feature-verification` to distinguish evidence from assumptions. When `frontend/dashboard-design` is selected, check action placement and the hidden layer: tooltips, hover and focus actions, and empty, loading, error, and no-permission states.
 
 ## Write review-ux.md
 
