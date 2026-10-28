@@ -30,6 +30,12 @@ Each stack folder has its own action skill, written only for that framework. Sel
 | Next | next/actions | `next/actions/SKILL.md` |
 | TanStack Start | tanstack-start/actions | `tanstack-start/actions/SKILL.md` |
 
+## JavaScript scaffolding
+
+| Skill id | Canonical path | Use when |
+|---|---|---|
+| javascript/domain-driver | `javascript/domain-driver/SKILL.md` | Scaffolding a feature, layer, or bespoke operation with the domain-driver CLI in a JavaScript package. |
+
 ## Laravel
 
 Laravel conventions, originally ported from Laracanon. Each skill lists the paths it applies to. Business operations use `laravel/actions`.

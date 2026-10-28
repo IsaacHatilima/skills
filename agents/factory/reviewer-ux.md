@@ -36,7 +36,7 @@ Do not sign in or submit forms. Review protected pages in source for the roles i
 
 ## Review the flow
 
-Apply `ux-review` to the intended path, role-specific controls, loading/empty/error/refused states, plain copy, keyboard/focus behaviour, labels, and narrow-screen use. Use `feature-verification` to distinguish evidence from assumptions. For each selected frontend skill, check its flow rules:
+Check the intended path, role-specific controls, loading/empty/error/refused states, plain copy, keyboard/focus behaviour, labels, and narrow-screen use. Distinguish observed behaviour from source inference and list flows you could not exercise. For each selected frontend skill, check its flow rules:
 - `frontend/app-shell`: the landing route, sidebar collapse and mobile drawer, skip link, and page-level states.
 - `frontend/overlays`: which container was chosen and what opens it, focus trap and return, dismissal, unsaved-change guards, and confirm or undo for destructive actions.
 - `frontend/data-display`: row actions on hover and focus, tooltips, and each popover or drawer's states.

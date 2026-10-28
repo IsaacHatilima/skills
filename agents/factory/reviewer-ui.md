@@ -38,7 +38,7 @@ Do not sign in or submit forms. Review protected pages in source against their n
 
 ## Review the result
 
-Apply `ui-review` to shared components, theme values, typography, spacing, surfaces, alignment, hierarchy, overflow, contrast, and focus states. Use `feature-verification` to distinguish observed rendering from source inference. Preserve shared primitives unless the task authorizes changing them. Check the screen against the rules and common mistakes of each selected frontend skill (`frontend/app-shell`, `frontend/overlays`, `frontend/data-display`).
+Check shared components, theme values, typography, spacing, surfaces, alignment, hierarchy, overflow, contrast, and focus states. Distinguish observed rendering from source inference and list screens you could not inspect. Preserve shared primitives unless the task authorizes changing them. Check the screen against the rules and common mistakes of each selected frontend skill (`frontend/app-shell`, `frontend/overlays`, `frontend/data-display`).
 
 ## Write review-ui.md
 

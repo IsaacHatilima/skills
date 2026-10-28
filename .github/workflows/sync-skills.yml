@@ -1,0 +1,97 @@
+name: Deliver agents and skills
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'agents/**'
+      - 'skills/**'
+      - 'distribution/**'
+      - 'scripts/**'
+      - '.github/workflows/sync-skills.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: skill-distribution
+  cancel-in-progress: false
+
+jobs:
+  destinations:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.targets.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+      - run: node --test scripts/sync-skills.test.mjs
+      - id: targets
+        run: echo "matrix=$(node scripts/sync-skills.mjs --matrix)" >> "$GITHUB_OUTPUT"
+
+  deliver:
+    needs: destinations
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.destinations.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: main
+          path: source
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+      - name: Check downstream credential
+        env:
+          SYNC_TOKEN: ${{ secrets.SKILLS_SYNC_TOKEN }}
+        run: |
+          if [ -z "$SYNC_TOKEN" ]; then
+            echo '::error::Set SKILLS_SYNC_TOKEN with Contents and Pull requests write access to laracanon and domain-driver.'
+            exit 1
+          fi
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          repository: ${{ matrix.repository }}
+          ref: ${{ matrix.base }}
+          token: ${{ secrets.SKILLS_SYNC_TOKEN }}
+          path: destination
+          persist-credentials: false
+      - name: Verify consumer supports the shared library
+        env:
+          ADAPTER: ${{ matrix.adapter }}
+        run: |
+          if [ ! -f "destination/$ADAPTER" ]; then
+            echo '::error::Merge the downstream shared-library installer migration before enabling deliveries.'
+            exit 1
+          fi
+      - name: Synchronize subscribed files
+        env:
+          TARGET: ${{ matrix.target }}
+        run: node source/scripts/sync-skills.mjs "$TARGET" "$GITHUB_WORKSPACE/destination"
+      - name: Open or update the downstream PR
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8
+        with:
+          token: ${{ secrets.SKILLS_SYNC_TOKEN }}
+          path: destination
+          base: ${{ matrix.base }}
+          branch: chore/sync-skills
+          delete-branch: true
+          commit-message: 'chore: sync factory and subscribed skills'
+          title: 'chore: sync factory and subscribed skills'
+          body: |
+            Updates the generated agent library from [IsaacHatilima/skills](https://github.com/IsaacHatilima/skills).
+
+            The destination mapping in `distribution/targets.json` selects factory for both repositories, Laravel skills for Laracanon, and non-Laravel skills for domain-driver. Archived skills are excluded.
+
+            Generated files are replaced as a snapshot, including removals. This branch is maintained by the delivery workflow; make content changes in the source repository.
+            See the [workflow run](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}).

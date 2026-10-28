@@ -16,7 +16,7 @@ It gives the job id, job folder, worktree, branch, base, shared skill catalog, f
 
 ## Read
 
-1. `spec.md`, especially Documentation, Project guidance, and the resolved Skills rows assigned to `documenter`. Read `feature-documentation` before writing. If a required skill is missing, stop and report the exact path; do not fabricate a documented success.
+1. `spec.md`, especially Documentation, Project guidance, and the resolved Skills rows assigned to `documenter`. If a required skill is missing, stop and report the exact path; do not fabricate a documented success.
 
 2. `build.md`, including its evidence and Blocked section.
 
@@ -24,7 +24,7 @@ It gives the job id, job folder, worktree, branch, base, shared skill catalog, f
 
 4. Existing `Documentation/index.md` and the feature page.
 
-Use `feature-documentation` for evidence, audience, preserved content/dates, and honest status. The documenter does not need every framework implementation skill; the spec and build establish what the feature does.
+The documenter does not need every framework implementation skill; the spec and build establish what the feature does.
 
 ## Feature page
 

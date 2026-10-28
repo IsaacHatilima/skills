@@ -1,0 +1,22 @@
+{
+  "laracanon": {
+    "repository": "IsaacHatilima/laracanon",
+    "base": "main",
+    "directory": "resources/agent-library",
+    "adapter": "src/Items/LibraryCatalog.php",
+    "agents": ["factory"],
+    "groups": ["laravel"],
+    "excludeGroups": [],
+    "legacyDirectories": ["resources/items"]
+  },
+  "domain-driver": {
+    "repository": "IsaacHatilima/domain-driver",
+    "base": "master",
+    "directory": "agent-library",
+    "adapter": "src/init/library.ts",
+    "agents": ["factory"],
+    "groups": ["*"],
+    "excludeGroups": ["laravel"],
+    "legacyDirectories": ["factory"]
+  }
+}

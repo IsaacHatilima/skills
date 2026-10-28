@@ -13,7 +13,7 @@ The request is the text the user typed after the skill name.
 
 Read the factory's [skill-selection rules](references/skills.md) and resolve the shared [skill catalog](../../skills/catalog.md). In this source layout, the library root is `../../skills/` relative to this workflow bundle. An installed workflow uses an explicitly supplied library root and its `catalog.md`, or a catalog supplied alongside project-native skills; do not assume the source checkout exists. Record both catalog and selection-file absolute paths.
 
-Resolve and read `project-discovery` using the catalog before starting the spec-writer. If the shared catalog, factory selection file, or discovery skill is unavailable, report the exact missing file and stop before creating a job. Save the shared catalog, factory selection file, and roots in `job.json` so approve/rework invocations can use the same library. These are read-only inputs; factory agents never install or edit skills as part of a feature job.
+If the shared catalog or factory selection file is unavailable, report the exact missing file and stop before creating a job. Project discovery is part of the spec-writer role; it does not require a separate discovery skill. Save the shared catalog, factory selection file, and roots in `job.json` so approve/rework invocations can use the same library. These are read-only inputs; factory agents never install or edit skills as part of a feature job.
 
 The spec-writer selects skills for each role and touched package, including multiple frameworks in one package. All later agents read their assigned files from the spec's Skills table. A stack skill does not replace project guidance or change which files the agent may write. Scaffolding uses each package's own tool: Artisan in a Laravel app, including its React or Vue frontend, and domain-driver only in a JavaScript package that uses it.
 
@@ -130,7 +130,7 @@ If any of this fails, set `needs-human` and tell the user what failed. When the 
 
 ### Spec
 
-Start `spec-writer` with the extra lines `Request: <the request, verbatim>` and `Discovery skill: <absolute path to project-discovery/SKILL.md>`. When it finishes, check that `spec.md` exists and has `## Project`, `## Skills`, `## Acceptance criteria` and `## Documentation` sections. Its Skills status must be READY and every selected skill must have a readable resolved path. Check that the table covers the factory selection rules for shared skills and every applicable stack skill from the shared catalog. If the status is BLOCKED, a required path is missing, or coverage is incomplete, set `needs-human`, report the spec's Blocked section or the missing skill, and stop before build.
+Start `spec-writer` with the extra lines `Request: <the request, verbatim>`. When it finishes, check that `spec.md` exists and has `## Project`, `## Skills`, `## Acceptance criteria` and `## Documentation` sections. Its Skills status must be READY and every selected skill must have a readable resolved path. Check that the table covers the factory selection rules for shared skills and every applicable stack skill from the shared catalog. If the status is BLOCKED, a required path is missing, or coverage is incomplete, set `needs-human`, report the spec's Blocked section or the missing skill, and stop before build.
 
 ### Build round N
 
