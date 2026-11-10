@@ -25,7 +25,7 @@ Each stack folder has its own action skill, written only for that framework. Sel
 
 | Stack | Skill id | Canonical path |
 |---|---|---|
-| Laravel | laravel/actions | `laravel/actions/SKILL.md` |
+| Laravel | laravel/actions | installed by Laracanon: `.agents/skills/laravel-actions/SKILL.md` |
 | Nest | nest/actions | `nest/actions/SKILL.md` |
 | Next | next/actions | `next/actions/SKILL.md` |
 | TanStack Start | tanstack-start/actions | `tanstack-start/actions/SKILL.md` |
@@ -38,26 +38,26 @@ Each stack folder has its own action skill, written only for that framework. Sel
 
 ## Laravel
 
-Laravel conventions, originally ported from Laracanon. Each skill lists the paths it applies to. Business operations use `laravel/actions`.
+Laravel conventions are maintained in [Laracanon](https://github.com/IsaacHatilima/laracanon), not in this library. `php artisan canon:install` writes each one into the project as `.agents/skills/laravel-<name>/`, so they resolve only through a project-local copy (step 1 above). Each skill lists the paths it applies to. Business operations use `laravel/actions`.
 
-| Skill id | Canonical path | Use when |
+| Skill id | Installed path | Use when |
 |---|---|---|
-| laravel/actions | `laravel/actions/SKILL.md` | Creating, refactoring, or reviewing a Laravel action or operation service that queries, writes, or makes a business decision. |
-| laravel/api-responses | `laravel/api-responses/SKILL.md` | Adding or changing a Laravel JSON API endpoint, its response envelope or pagination output, or how API errors such as 401, 403, 404, 422, 429, and 500 are rendered. |
-| laravel/architecture | `laravel/architecture/SKILL.md` | Placing new Laravel behaviour, naming a new class, planning a feature or refactor, or reviewing where queries, validation, authorization, and responses belong. |
-| laravel/controllers | `laravel/controllers/SKILL.md` | Adding or changing Laravel controllers or routes, wiring a FormRequest and action to an endpoint, or choosing between an API response, Inertia page, and redirect. |
-| laravel/data | `laravel/data/SKILL.md` | Creating or changing Laravel input Data classes, output Resources, or the frontend-facing representation of a model, including partial updates. |
-| laravel/eloquent-strictness | `laravel/eloquent-strictness/SKILL.md` | Enabling Eloquent strict mode, or when fixing a lazy-loading, missing-attribute, or discarded-attribute violation or an N+1 query. |
-| laravel/enums | `laravel/enums/SKILL.md` | Adding or changing a PHP enum used by a Laravel model, or its stored values, labels, validation, or select options. |
-| laravel/frontend | `laravel/frontend/SKILL.md` | Adding or changing React or Inertia pages, page props, Wayfinder routes, forms, or shared UI in a Laravel application's resources/js. |
-| laravel/insights | `laravel/insights/SKILL.md` | Adding or running PHP Insights in a Laravel application, or when Insights reports a finding. |
-| laravel/jobs | `laravel/jobs/SKILL.md` | Adding or reviewing Laravel queued jobs, listeners, or background work such as exports, reports, webhooks, imports, and notifications, or when a request is slow because it does work the user doesn't need to wait for. |
-| laravel/migrations | `laravel/migrations/SKILL.md` | Adding or changing a Laravel migration, table, column, index, foreign key, or schema backfill. |
-| laravel/models | `laravel/models/SKILL.md` | Creating or changing an Eloquent model, or its casts, relationships, scopes, fillable columns, or PHPDoc properties. |
-| laravel/phpstan | `laravel/phpstan/SKILL.md` | Adding or running PHPStan or Larastan in a Laravel application, or when PHPStan reports an error. |
-| laravel/requests | `laravel/requests/SKILL.md` | Adding or changing a Laravel FormRequest, validation rules, request authorization, or query parameters such as filters, sorting, and pagination. |
-| laravel/security | `laravel/security/SKILL.md` | Adding or reviewing Laravel authorization, policies, authentication, API tokens, CORS, CSRF exceptions, file uploads, raw queries, HTML output, rate limits, or production configuration, or before deploying a Laravel application. |
-| laravel/tests | `laravel/tests/SKILL.md` | Writing, choosing, or running tests for a Laravel application, including Pest unit, feature, action, HTTP, and browser tests, or deciding which tests a change needs. |
+| laravel/actions | `.agents/skills/laravel-actions/SKILL.md` | Creating, refactoring, or reviewing a Laravel action or operation service that queries, writes, or makes a business decision. |
+| laravel/api-responses | `.agents/skills/laravel-api-responses/SKILL.md` | Adding or changing a Laravel JSON API endpoint, its response envelope or pagination output, or how API errors such as 401, 403, 404, 422, 429, and 500 are rendered. |
+| laravel/architecture | `.agents/skills/laravel-architecture/SKILL.md` | Placing new Laravel behaviour, naming a new class, planning a feature or refactor, or reviewing where queries, validation, authorization, and responses belong. |
+| laravel/controllers | `.agents/skills/laravel-controllers/SKILL.md` | Adding or changing Laravel controllers or routes, wiring a FormRequest and action to an endpoint, or choosing between an API response, Inertia page, and redirect. |
+| laravel/data | `.agents/skills/laravel-data/SKILL.md` | Creating or changing Laravel input Data classes, output Resources, or the frontend-facing representation of a model, including partial updates. |
+| laravel/eloquent-strictness | `.agents/skills/laravel-eloquent-strictness/SKILL.md` | Enabling Eloquent strict mode, or when fixing a lazy-loading, missing-attribute, or discarded-attribute violation or an N+1 query. |
+| laravel/enums | `.agents/skills/laravel-enums/SKILL.md` | Adding or changing a PHP enum used by a Laravel model, or its stored values, labels, validation, or select options. |
+| laravel/frontend | `.agents/skills/laravel-frontend/SKILL.md` | Adding or changing React or Inertia pages, page props, Wayfinder routes, forms, or shared UI in a Laravel application's resources/js. |
+| laravel/insights | `.agents/skills/laravel-insights/SKILL.md` | Adding or running PHP Insights in a Laravel application, or when Insights reports a finding. |
+| laravel/jobs | `.agents/skills/laravel-jobs/SKILL.md` | Adding or reviewing Laravel queued jobs, listeners, or background work such as exports, reports, webhooks, imports, and notifications, or when a request is slow because it does work the user doesn't need to wait for. |
+| laravel/migrations | `.agents/skills/laravel-migrations/SKILL.md` | Adding or changing a Laravel migration, table, column, index, foreign key, or schema backfill. |
+| laravel/models | `.agents/skills/laravel-models/SKILL.md` | Creating or changing an Eloquent model, or its casts, relationships, scopes, fillable columns, or PHPDoc properties. |
+| laravel/phpstan | `.agents/skills/laravel-phpstan/SKILL.md` | Adding or running PHPStan or Larastan in a Laravel application, or when PHPStan reports an error. |
+| laravel/requests | `.agents/skills/laravel-requests/SKILL.md` | Adding or changing a Laravel FormRequest, validation rules, request authorization, or query parameters such as filters, sorting, and pagination. |
+| laravel/security | `.agents/skills/laravel-security/SKILL.md` | Adding or reviewing Laravel authorization, policies, authentication, API tokens, CORS, CSRF exceptions, file uploads, raw queries, HTML output, rate limits, or production configuration, or before deploying a Laravel application. |
+| laravel/tests | `.agents/skills/laravel-tests/SKILL.md` | Writing, choosing, or running tests for a Laravel application, including Pest unit, feature, action, HTTP, and browser tests, or deciding which tests a change needs. |
 
 ## Nest
 

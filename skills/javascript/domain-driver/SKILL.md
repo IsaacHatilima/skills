@@ -29,7 +29,6 @@ On Nest the tool registers what it generates: the feature module in the root mod
 | A bespoke operation | `npx domain-driver make:action users/User findActiveUsers` |
 | Bespoke operation with a request body | `npx domain-driver make:action users/User archiveUser --with-input --returns one` |
 | Component, container, hook | `npx domain-driver make:component users/UserCard`, `make:container users/UserContainer`, `make:hook users/User` |
-| Refresh this guidance | `npx domain-driver init` |
 
 `make:service` and `make:repository` generate the server side only, because that is the only side there is. They are unavailable on `next-frontend` and `react`, whose API lives outside the project; on those stacks the hook is the whole client.
 
