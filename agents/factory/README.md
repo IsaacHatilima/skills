@@ -45,11 +45,11 @@ The [shared catalog](../../skills/catalog.md) belongs to all workflows. Factory'
 
 Select the stack skills applicable to each changed path. A Laravel React/Inertia feature uses Laravel's backend skills and `laravel/frontend`; a Nest-only server fix does not need untouched frontend guidance. UI review follows actual rendered output, including server templates.
 
-Factory roles contain their own discovery, evidence, security, UX/UI, and documentation instructions. When delivered, additional quality and frontend skills are selected from the installed catalog. An unavailable selected stack skill blocks the relevant stage; absent unused or optional groups do not.
+Factory roles contain their own discovery, evidence, security, UX/UI, and documentation instructions. When installed, additional quality and frontend skills are selected from the installed catalog. An unavailable selected stack skill blocks the relevant stage; absent unused or optional groups do not.
 
 ## Setup and validation limits
 
-The distribution script preserves the bundle beside its command adapter, renders its eight child agents into `.claude/agents/` and `.codex/agents/`, and supplies a catalog beside the native skill folders. Laracanon and domain-driver install that generated delivery. See the [destination mapping](https://github.com/IsaacHatilima/skills/blob/main/distribution/targets.json).
+An installed project keeps this bundle beside its command adapter, its eight child agents in `.claude/agents/` and `.codex/agents/`, and a catalog beside the native skill folders. Nothing installs it automatically; the repository README lists the files to copy.
 
 Child sources retain `name`, `description`, `claude-model`, `claude-tools`, `claude-effort`, `codex-model`, and `codex-reasoning-effort`. Skill loading does not change their model choices or write permissions.
 
