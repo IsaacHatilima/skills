@@ -16,13 +16,13 @@ Features follow domain-driver: `src/features/<feature>/` when `src/features` exi
 | `controllers/` | `CreateProject.controller.ts`: route, guards, one action call | `controllers` |
 | `schemas/`, `dto/` | Zod input schemas and their `createZodDto` classes | `dtos` |
 | `services/` | `CreateProject.service.ts`: the action | `actions` |
-| `repositories/` | `CreateProject.repository.ts`: Prisma queries | `database` |
+| `repositories/` | `CreateProject.repository.ts`: the feature's queries and transactions | `database` |
 | `types/` | Response schemas, types, and mappers | `dtos` |
 
 The flow is controller → validated DTO → action → repositories → output DTO → envelope (see `api-responses`). Jobs and scripts call the same actions.
 
 - Scaffold with `npx domain-driver make:feature <feature>/<Entity> -a` or `make:action <feature>/<Entity> <actionName>`. Don't hand-write a layer it generates; it also registers the module, controllers, and providers.
-- Infrastructure lives in `src/database`, `src/config`, `src/common`, and `src/security`. Code several features share goes in a `shared/` module.
+- Infrastructure lives in `src/database` (the Drizzle module, schema, and migration runner), `src/config`, `src/common`, and `src/security`. Code several features share goes in a `shared/` module, including repositories for SQL more than one flow runs.
 
 ## Modules and providers
 
@@ -38,7 +38,7 @@ In "Nest can't resolve dependencies of X (?, …)", the `?` marks the missing pa
 
 - Validate the environment at boot with a Zod schema (`ConfigModule.forRoot({ validate })`), so a missing or invalid variable stops startup. Inject the typed result; application code never reads `process.env`.
 - Log through Nest's `Logger` with a class context, never `console.log`. Log ids, never tokens, passwords, request bodies, or personal data.
-- Call `app.enableShutdownHooks()` in `main.ts`, and close Prisma, Redis, and workers in `onModuleDestroy` or `onApplicationShutdown`. Lifecycle hooks `await` their work.
+- Call `app.enableShutdownHooks()` in `main.ts`, and close the database pool, Redis, and workers in `onModuleDestroy` or `onApplicationShutdown`. Lifecycle hooks `await` their work.
 - Put helmet, CORS, and proxy trust in one function that `main.ts` and the e2e tests both call (see `security`, `tests`).
 
 Adapted in part from [nestjs-best-practices](https://github.com/IsaacHatilima/agent-nestjs-skills/tree/main/skills/nestjs-best-practices) (MIT).

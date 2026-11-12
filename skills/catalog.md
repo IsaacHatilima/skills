@@ -61,20 +61,20 @@ Laravel 13 conventions, including React and Inertia inside a Laravel app (`larav
 
 ## Nest
 
-NestJS conventions for Prisma and Zod, with the file layout domain-driver generates. Business operations use `nest/actions`.
+NestJS conventions for Drizzle and Zod, with the file layout domain-driver generates. A project already on Prisma keeps it; each persistence skill ends with its Prisma equivalents. Business operations use `nest/actions`.
 
 | Skill id | Canonical path | Use when |
 |---|---|---|
 | nest/actions | `nest/actions/SKILL.md` | Creating or reviewing a class that runs one business operation: its input, actor, transaction, side effects, and return value. |
-| nest/api-responses | `nest/api-responses/SKILL.md` | Changing the response envelope, exception filter, error codes, or paginated output, or how validation, auth, Prisma, and unexpected errors reach the client. |
+| nest/api-responses | `nest/api-responses/SKILL.md` | Changing the response envelope, exception filter, error codes, or paginated output, or how validation, auth, database, and unexpected errors reach the client. |
 | nest/architecture | `nest/architecture/SKILL.md` | Adding a feature or module, deciding where code belongs, sharing providers, fixing dependency-resolution or circular-import errors, using events, or setting up config validation, logging, and shutdown. |
 | nest/controllers | `nest/controllers/SKILL.md` | Adding or changing a controller or route, wiring DTOs, pipes, and guards, choosing an HTTP method or status, or reading the actor. |
-| nest/database | `nest/database/SKILL.md` | Setting up Prisma, changing schema conventions, writing repository queries, fixing N+1 queries or over-fetching, using transactions, or paginating. |
-| nest/dtos | `nest/dtos/SKILL.md` | Creating Zod request schemas and DTOs, query or path validation, or partial updates, or deciding what an endpoint returns and how a Prisma result becomes it. |
+| nest/database | `nest/database/SKILL.md` | Setting up the Drizzle module, changing schema conventions, writing repository queries, fixing N+1 queries or over-fetching, using transactions, translating database errors, or paginating. |
+| nest/dtos | `nest/dtos/SKILL.md` | Creating Zod request schemas and DTOs, query or path validation, or partial updates, or deciding what an endpoint returns and how a database row becomes it. |
 | nest/jobs | `nest/jobs/SKILL.md` | Adding BullMQ background work or recurring jobs, or when a request is slow because of work the client needn't wait for. |
-| nest/migrations | `nest/migrations/SKILL.md` | Changing Prisma models or constraints, writing backfills, or running migrations locally, in CI, or in production. |
+| nest/migrations | `nest/migrations/SKILL.md` | Changing tables, columns, or constraints with Drizzle Kit, writing backfills, or running migrations locally, in CI, or in production. |
 | nest/security | `nest/security/SKILL.md` | Adding or reviewing auth and permission guards, public routes, ownership and tenant scoping, rate limits, CORS and helmet, JWT and refresh tokens, passwords, or secrets. |
-| nest/tests | `nest/tests/SKILL.md` | Writing or running unit and e2e tests, using an isolated Prisma test database, overriding providers, or deciding which tests a change needs. |
+| nest/tests | `nest/tests/SKILL.md` | Writing or running unit and e2e tests, using an isolated test database, overriding providers, or deciding which tests a change needs. |
 
 ## TypeScript
 

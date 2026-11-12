@@ -1,6 +1,6 @@
 ---
 name: dtos
-description: Use when creating or changing a NestJS request DTO, Zod input schema, query or path validation, or partial-update contract, or when deciding what an endpoint returns and how a Prisma result becomes that response.
+description: Use when creating or changing a NestJS request DTO, Zod input schema, query or path validation, or partial-update contract, or when deciding what an endpoint returns and how a database row becomes that response.
 ---
 
 # DTOs
@@ -20,13 +20,13 @@ Register `{ provide: APP_PIPE, useClass: ZodValidationPipe }` from `nestjs-zod` 
 
 ## Partial updates
 
-Build the update schema with `.partial()` and a `.refine()` that rejects an empty body. An omitted field stays `undefined`, which Prisma leaves untouched, while `null` clears the column. Allow `.nullable()` only on fields that may be cleared.
+Build the update schema with `.partial()` and a `.refine()` that rejects an empty body. An omitted field stays `undefined`, which Drizzle's `.set()` (and Prisma's `data`) leaves untouched, while `null` clears the column. Allow `.nullable()` only on fields that may be cleared.
 
 ## Output DTOs
 
-- Endpoints return an output DTO, never a Prisma row, an input DTO, or `any`. Rows carry columns such as password hashes, and every new column would leak.
+- Endpoints return an output DTO, never a database row, an input DTO, or `any`. Rows carry columns such as password hashes, and every new column would leak.
 - Replace the interface domain-driver generates in `types/Project.types.ts` with a Zod response schema and its inferred type. The same schema documents the route in OpenAPI.
-- `types/Project.mapper.ts` exports the `select` the response needs and a mapper that copies each field. Repositories query with that select (see `database`), so the mapper's input type is `Prisma.ProjectGetPayload` of it.
+- `types/Project.mapper.ts` exports the columns the response needs, the record type those columns produce, and a mapper that copies each field. Repositories select or return exactly those columns (see `database`), and the flow's repository calls the mapper.
 - Mappers turn dates into ISO strings and never query.
 
 ## Example
@@ -49,26 +49,25 @@ export const ProjectSchema = z.object({
 export type Project = z.infer<typeof ProjectSchema>;
 
 // types/Project.mapper.ts
-export const projectSelect = {
-  id: true,
-  name: true,
-  createdAt: true,
-  _count: { select: { tasks: true } },
-} satisfies Prisma.ProjectSelect;
+export const projectColumns = {
+  id: projects.id,
+  name: projects.name,
+  createdAt: projects.createdAt,
+};
 
-export type ProjectRecord = Prisma.ProjectGetPayload<{ select: typeof projectSelect }>;
+export type ProjectRecord = Pick<ProjectRow, 'id' | 'name' | 'createdAt'> & { taskCount: number };
 
 export function toProject(project: ProjectRecord): Project {
   return {
     id: project.id,
     name: project.name,
-    taskCount: project._count.tasks,
+    taskCount: project.taskCount,
     createdAt: project.createdAt.toISOString(),
   };
 }
 ```
 
-`createZodDto` comes from `nestjs-zod`, and `Prisma` from the generated client.
+`createZodDto` comes from `nestjs-zod`, and `projects` and `ProjectRow` from the Drizzle schema. A list repository selects `{ ...projectColumns, taskCount: count(tasks.id) }` with a left join and `groupBy(projects.id)`. On Prisma, export a `select` object with `_count`, and type the record as `Prisma.ProjectGetPayload` of it.
 
 ## Verify
 
