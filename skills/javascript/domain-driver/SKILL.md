@@ -42,6 +42,8 @@ Hooks are one file per action — `<Action><Entity>.hook.ts` exporting `use<Acti
 4. **Names.** Feature folders kebab-case. Entities, actions, and classes PascalCase. Action names include their noun: `archiveUser`, `findActiveUsers`.
 5. **Do not widen the standard five.** List returns all, Show returns one by id, Create takes the create schema, Update takes id and the update schema, Delete takes id. Anything else is a bespoke action.
 6. **Finish what the tool leaves open.** Fill the `TODO` in each repository. Add the printed line to `<feature>.routes.ts` on Node or register the printed classes in `<feature>.module.ts` on Nest. Add fields to the Zod schemas.
+7. **Zod is part of the stack.** The generated schemas import `zod`. When `package.json` lacks it, add it in the same change; never replace the generated schemas with hand-written parsers or type guards. Parse every request body and API response with a schema, and derive the feature's types with `z.infer` instead of keeping a parallel interface in `types/`.
+8. **Shared plumbing lives outside features.** The API base URL, the fetch helper, the response envelope and its error type are the same for every feature. Keep them once in `src/lib/` (or the project's equivalent), created with the first feature that needs them, and have each hook call the endpoint through them. A feature folder holds only that feature's code, and nothing in it is named after the feature when it isn't specific to it.
 
 ## Layout by stack
 
