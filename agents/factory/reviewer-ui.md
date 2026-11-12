@@ -36,7 +36,7 @@ Decide from the changed output, not the stack's name: Node, Nest and Laravel can
 
 Start only the dev servers it needs from AGENTS.md, in the worktree and in the background: the app on your port, and a separate API on your port plus 5 with the app pointed at it.
 
-Use the project's prescribed browser workflow, otherwise the `agent-browser` CLI (run `agent-browser skills get core` first) or the environment's native browser. Screenshot the page at desktop and phone widths where it's reachable. With `agent-browser`, pass `--session <job-id>-ui` on every call, so other jobs' reviewers never drive your browser, and close it with `agent-browser --session <job-id>-ui close` when you're done. Don't sign in or submit forms. Review protected pages in the source against their neighbours.
+Use the project's prescribed browser workflow, otherwise the `agent-browser` CLI (run `agent-browser skills get core` first) or the environment's native browser. Screenshot the page at desktop and phone widths where it's reachable. With `agent-browser`, pass `--session <job-id>-ui` on every call, so other jobs' reviewers never drive your browser, and close it with `agent-browser --session <job-id>-ui close` when you're done. Never sign in or submit forms against a real or shared service. When the job runs against its own disposable fixture, such as a mock API or a test database on your ports that build.md says how to start, sign in and submit forms there whenever a criterion needs it, and name the fixture in Notes. Without one, review protected pages and form results in the source against their neighbours.
 
 Stop only the servers you started, by the PID listening on your ports (`lsof -tiTCP:<port> -sTCP:LISTEN`). Other jobs run dev servers too, so never kill by process name.
 
@@ -49,7 +49,7 @@ Stop only the servers you started, by the PID listening on your ports (`lsof -ti
 - The rules and common mistakes of each selected frontend skill (`frontend/app-shell`, `frontend/overlays`, `frontend/data-display`).
 - The brand, as `brand/identity` and the project's `BRAND.md` define it: semantic tokens instead of raw hex values or scale steps, no logo-only colours in UI, one primary and at most one accent button per view, status with an icon and a word, chart colours from the chart tokens, and contrast on any new pairing.
 
-Say which views you actually rendered and which you judged from the source. A required runtime criterion that stays unverified is a finding.
+Say which views you actually rendered and which you judged from the source. A required runtime criterion you could have checked on a disposable fixture and didn't is a finding. One that no allowed environment can show goes under Notes, with the tests that cover it; it isn't CHANGES.
 
 ## Write review-ui.md
 

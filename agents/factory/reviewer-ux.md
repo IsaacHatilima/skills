@@ -34,7 +34,7 @@ Decide from the changed surfaces and flows, not the stack's name: Node, Nest and
 
 If the change shows up on a page, use it like a visitor would. Start only the dev servers it needs from AGENTS.md, in the worktree and in the background: the app on your port, and a separate API on your port plus 5 with the app pointed at it.
 
-Use the project's prescribed browser workflow, otherwise the `agent-browser` CLI (run `agent-browser skills get core` first) or the environment's native browser. With `agent-browser`, pass `--session <job-id>-ux` on every call, so other jobs' reviewers never drive your browser, and close it with `agent-browser --session <job-id>-ux close` when you're done. Don't sign in or submit forms: the dev server may talk to real services. Review protected pages in the source, for each role in Permissions.
+Use the project's prescribed browser workflow, otherwise the `agent-browser` CLI (run `agent-browser skills get core` first) or the environment's native browser. With `agent-browser`, pass `--session <job-id>-ux` on every call, so other jobs' reviewers never drive your browser, and close it with `agent-browser --session <job-id>-ux close` when you're done. Never sign in or submit forms against a real or shared service. When the job runs against its own disposable fixture, such as a mock API or a test database on your ports that build.md says how to start, sign in and submit forms there whenever a criterion needs it, and name the fixture in Notes. Without one, review protected pages and form results in the source, for each role in Permissions.
 
 Stop only the servers you started, by the PID listening on your ports (`lsof -tiTCP:<port> -sTCP:LISTEN`). Other jobs run dev servers too, so never kill by process name.
 
@@ -51,7 +51,7 @@ Stop only the servers you started, by the PID listening on your ports (`lsof -ti
   - `frontend/overlays`: which container was chosen and what opens it, focus trap and return, dismissal, unsaved-change guards, and confirm or undo for destructive actions.
   - `frontend/data-display`: row actions on hover and focus, tooltips, and each popover's or drawer's states.
 
-Say which routes, states and roles you actually observed and which you judged from the source. A required runtime criterion that stays unverified is a finding; don't imply an authenticated runtime pass.
+Say which routes, states and roles you actually observed and which you judged from the source. A required runtime criterion you could have checked on a disposable fixture and didn't is a finding. One that no allowed environment can show goes under Notes, with the tests that cover it; it isn't CHANGES. Never imply an authenticated runtime pass you didn't make.
 
 ## Write review-ux.md
 
