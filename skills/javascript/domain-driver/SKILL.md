@@ -32,7 +32,7 @@ On Nest the tool registers what it generates: the feature module in the root mod
 
 `make:service` and `make:repository` generate the server side only, because that is the only side there is. They are unavailable on `next-frontend` and `react`, whose API lives outside the project; on those stacks the hook is the whole client.
 
-Hooks are one file per action — `<Action><Entity>.hook.ts` exporting `use<Action><Entity>` — never a combined `use<Entity>.ts`. On `tanstack-start` they are TanStack Query hooks backed by a generated `<feature>.keys.ts`; elsewhere they are plain React state.
+Hooks are one file per action — `<Action><Entity>.hook.ts` exporting `use<Action><Entity>` — never a combined `use<Entity>.ts`. On `tanstack-start` they are TanStack Query hooks backed by a generated `<feature>.keys.ts`; elsewhere they are plain React state. A project that lints with `eslint-plugin-react-hooks` 7 rejects the generated plain-state hooks, which call `setState` synchronously inside an effect (`react-hooks/set-state-in-effect`). Fix the pattern rather than hiding it: start in the loading state, set state only in the request's promise callbacks, and refetch from an event handler that sets loading and bumps a request counter the effect depends on. Never defer the call with `queueMicrotask` or `setTimeout`, or disable the rule, to get past the linter.
 
 ## Rules
 

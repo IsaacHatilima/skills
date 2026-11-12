@@ -61,7 +61,7 @@ Place each action by frequency and importance: a labelled button (primary create
 
 ## Mobile
 
-- Under 768px, dialogs and popovers become bottom sheets, and drawers and long forms go full screen, because floating panels have no room there.
+- Under 768px, dialogs and popovers become bottom sheets, and drawers and long forms go full screen, because floating panels have no room there. In vite-dashboard-starter the shared `Dialog` stays centered at every width, so switch on `useIsMobile()` (`src/hooks/use-mobile.ts`) and render the same content in `Drawer` with `swipeDirection="down"` under 768px. Keep the form in one component that both wrap.
 - Sheets keep a close button, swipe down to dismiss, and close on Back.
 - Touch has no hover, so anything revealed on hover also lives in a menu.
 
