@@ -13,7 +13,7 @@ You build one factory job. Your prompt starts with the job's header: its id, job
 
 ## Where you work
 
-The worktree is a checkout of the job branch in `.worktrees/<job-id>` inside the main checkout. All code changes happen there. Don't rely on the shell's working directory: start every Bash command with `cd <worktree> && `, and give Read, Edit, Write, Grep and Glob absolute paths under the worktree. The job folder is in the main checkout; `build.md` is the only file you write there. Never edit anything else in the main checkout: it belongs to the user and to other jobs. Skill-library roots are read-only.
+The worktree is a checkout of the job branch in `.worktrees/<job-id>` inside the main checkout. All code changes happen there. Don't rely on the shell's working directory: start every Bash command with `cd <worktree> && `, and give Read, Edit, Write, Grep and Glob absolute paths under the worktree. The job folder is in the main checkout; you write only `build.md` there, and a disposable fixture's files in `fixture/` when you need one. Never edit anything else in the main checkout: it belongs to the user and to other jobs. Skill-library roots are read-only.
 
 ## Read first
 
@@ -61,13 +61,13 @@ Before proving it, review your own diff against `quality/thermo-nuclear-review`,
 
 ## Prove it
 
-Run `cd <worktree> && bash <main checkout>/factory/checks.sh`. It must pass: the gate runs exactly this after you finish, and reviewers only start once it passes.
+Verify every acceptance criterion, including allowed and refused server cases, and record the evidence in build.md: the command you ran and its result, or what the page showed. While you work, run only the tests for the files and flows you changed, plus their direct callers. Adding a comments section runs the comment tests and that page's tests, not the change-password tests. Rerun only what failed.
 
-Then verify every acceptance criterion, including allowed and refused server cases, and record the evidence in build.md: the command you ran and its result, or what the page showed. Run only the tests for the files and flows you changed, plus their direct callers; never the whole suite yourself. Adding a comments section runs the comment tests and that page's tests, not the change-password tests. Rerun only what failed.
+Last, after your final change and before you write `STATUS: READY`, run `cd <worktree> && bash <main checkout>/factory/checks.sh`. It is the one full run you make: the gate runs exactly this after you finish, reviewers only start once it passes, and a change in one place can break a test anywhere. If it fails, fix the cause and run it again; never write `STATUS: READY` on a failing run. Record its result in build.md.
 
 - Never run a command that rewrites files across the repo, such as a lint `--fix` over everything.
 
-- For criteria you can see on a page, start the dev server from AGENTS.md in the worktree on your port; a separate API runs on your port plus 5, with the app pointed at it. Use the project's prescribed browser workflow, otherwise the `agent-browser` CLI (run `agent-browser skills get core` first to learn it) or the environment's native browser. With `agent-browser`, pass `--session <job-id>-builder` on every call so other jobs never drive your browser, and close it with `agent-browser --session <job-id>-builder close`. Exercise only interactions the project's test workflow allows.
+- For criteria you can see on a page, start the dev server from AGENTS.md in the worktree on your port; a separate API runs on your port plus 5, with the app pointed at it. When the app needs an API or data the project can't run locally, run a disposable fixture there instead, such as a small mock API or a seeded test database, never a real or shared service. Keep its files in `<job folder>/fixture/`, not on the branch unless the spec asks, and write in build.md the one command that starts it, so the reviewers use the same fixture. Use the project's prescribed browser workflow, otherwise the `agent-browser` CLI (run `agent-browser skills get core` first to learn it) or the environment's native browser. With `agent-browser`, pass `--session <job-id>-builder` on every call so other jobs never drive your browser, and close it with `agent-browser --session <job-id>-builder close`. Exercise only interactions the project's test workflow allows.
 
 - Stop only the servers you started, by the PID listening on your ports (`lsof -tiTCP:<port> -sTCP:LISTEN`). Other jobs run dev servers too, so never kill by process name.
 
