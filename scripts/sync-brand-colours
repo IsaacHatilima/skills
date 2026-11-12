@@ -1,0 +1,196 @@
+#!/usr/bin/env python3
+"""Refresh skills/brand/identity/ from the brand-colours (Kolors) repository.
+
+Usage:
+  scripts/sync-brand-colours                 clone the repository's default branch and sync from it
+  scripts/sync-brand-colours --source DIR    sync from a local checkout instead
+  scripts/sync-brand-colours --target DIR    write somewhere other than the skill (for tests)
+
+It writes three things into the skill:
+
+  library/colors.json   every colour in colors/: slug, name, hex, character and suggested uses
+  kolors/               the generator modules from tools/, copied unchanged, which build a full
+                        system (scales, light and dark tokens, status, charts, contrast audit)
+  systems/              the finished reference systems from palettes/, with links pointing at GitHub
+
+Removed systems are deleted and systems/index.md is rebuilt. Commit the result,
+then rerun ./install to update installed copies.
+"""
+
+import argparse
+import json
+import re
+import shutil
+import subprocess
+import sys
+import tempfile
+from pathlib import Path
+
+REPO = "IsaacHatilima/brand-colours"
+BRANCH = "main"
+BLOB = f"https://github.com/{REPO}/blob/{BRANCH}"
+RAW = f"https://raw.githubusercontent.com/{REPO}/{BRANCH}"
+TARGET = Path(__file__).resolve().parents[1] / "skills" / "brand" / "identity"
+SYSTEM_FILES = ("{slug}.md", "{slug}.css", "{slug}.tokens.json")
+# The generator, minus the PNG sheet renderer and batch builder, which need Pillow and Chrome.
+KOLORS_MODULES = ("colormath", "scales", "status", "system", "checks", "describe",
+                  "render_md", "render_tokens", "specs")
+FIELDS = {"hex": r"^- HEX:\s*(#[0-9A-Fa-f]{6})", "character": r"^- Character:\s*(.+)$",
+          "uses": r"^- Suggested uses:\s*(.+)$"}
+
+
+class SyncError(Exception):
+    pass
+
+
+def clone(into):
+    url = f"https://github.com/{REPO}.git"
+    res = subprocess.run(["git", "clone", "--quiet", "--depth", "1", "--branch", BRANCH, url, str(into)],
+                         capture_output=True, text=True)
+    if res.returncode != 0:
+        raise SyncError(f"couldn't clone {url}: {res.stderr.strip()}")
+    return into
+
+
+def source_version(source):
+    res = subprocess.run(["git", "rev-parse", "--short", "HEAD"], cwd=source, capture_output=True, text=True)
+    return res.stdout.strip() if res.returncode == 0 else "local copy"
+
+
+def write_if_changed(path, text):
+    if path.exists() and path.read_text() == text:
+        return False
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text)
+    return True
+
+
+# ---- The colour library ------------------------------------------------------
+
+
+def parse_color(path):
+    text = path.read_text()
+    title = re.search(r"^## (.+)$", text, re.M)
+    found = {key: re.search(pattern, text, re.M) for key, pattern in FIELDS.items()}
+    if not title or not found["hex"]:
+        return None
+    return {"slug": path.stem, "name": title.group(1).strip(), "hex": found["hex"].group(1).upper(),
+            "character": found["character"].group(1).strip() if found["character"] else "",
+            "uses": found["uses"].group(1).strip() if found["uses"] else ""}
+
+
+def sync_library(source, target, version):
+    colors_dir = source / "colors"
+    if not colors_dir.is_dir():
+        raise SyncError(f"{source} has no colors/ folder; is it a brand-colours checkout?")
+    colors = [c for c in (parse_color(p) for p in sorted(colors_dir.glob("*.md")) if p.stem != "index") if c]
+    if not colors:
+        raise SyncError(f"{colors_dir} has no readable colours")
+    rows = ",\n".join(json.dumps(c, ensure_ascii=False) for c in colors)
+    text = (f'{{"source": "{REPO}", "version": "{version}", "count": {len(colors)}, "colors": [\n'
+            f"{rows}\n]}}\n")
+    write_if_changed(target / "library" / "colors.json", text)
+    return len(colors)
+
+
+def sync_kolors(source, target):
+    changed = 0
+    for module in KOLORS_MODULES:
+        src = source / "tools" / f"{module}.py"
+        if not src.is_file():
+            raise SyncError(f"{src} is missing")
+        changed += write_if_changed(target / "kolors" / f"{module}.py", src.read_text())
+    return changed
+
+
+# ---- Reference systems -------------------------------------------------------
+
+
+def rewrite_links(text, slug):
+    """Point relative links at the repository: the colour library and the colour sheet image."""
+    text = re.sub(r"(?:\.\./)+colors/", f"{BLOB}/colors/", text)
+    return re.sub(rf"\]\(({re.escape(slug)}\.png)\)", rf"]({RAW}/palettes/{slug}/\1)", text)
+
+
+def system_slugs(source):
+    palettes = source / "palettes"
+    if not palettes.is_dir():
+        raise SyncError(f"{source} has no palettes/ folder; is it a brand-colours checkout?")
+    return sorted(p.name for p in palettes.iterdir() if (p / f"{p.name}.tokens.json").is_file())
+
+
+def copy_system(source, slug, systems):
+    changed = False
+    for pattern in SYSTEM_FILES:
+        name = pattern.format(slug=slug)
+        src = source / "palettes" / slug / name
+        if not src.is_file():
+            raise SyncError(f"{src} is missing")
+        changed |= write_if_changed(systems / slug / name, rewrite_links(src.read_text(), slug))
+    return changed
+
+
+def index_row(slug, systems):
+    tokens = json.loads((systems / slug / f"{slug}.tokens.json").read_text())
+    logo = tokens["logo"]
+    swatch = lambda role: f"{logo[role]['name']} `{logo[role]['hex']}`"  # noqa: E731
+    return (f"| [{tokens['name']}]({slug}/{slug}.md) | {swatch('primary')} | {swatch('accent')} | "
+            f"{swatch('spark')} | {swatch('ink')} | {tokens['character']} | {tokens['uses']} |")
+
+
+def write_index(slugs, version, systems):
+    rows = "\n".join(index_row(slug, systems) for slug in slugs)
+    (systems / "index.md").write_text(f"""# Reference systems
+
+{len(slugs)} finished systems from [{REPO}](https://github.com/{REPO}) at `{version}`. Generated by `scripts/sync-brand-colours`; don't edit by hand.
+
+These are worked examples of what `brand.py build` produces, and ready-made choices when a person asks for one. A new brand is composed from the colour library instead (see the skill).
+
+| System | Primary | Accent | Logo spark | Logo ink | Character | Suggested uses |
+|---|---|---|---|---|---|---|
+{rows}
+""")
+
+
+def sync_systems(source, target, version):
+    systems = target / "systems"
+    slugs = system_slugs(source)
+    systems.mkdir(parents=True, exist_ok=True)
+    changed = [slug for slug in slugs if copy_system(source, slug, systems)]
+    removed = [p.name for p in systems.iterdir() if p.is_dir() and p.name not in slugs]
+    for name in removed:
+        shutil.rmtree(systems / name)
+    write_index(slugs, version, systems)
+    return slugs, changed, removed
+
+
+def sync(source, target):
+    version = source_version(source)
+    colors = sync_library(source, target, version)
+    modules = sync_kolors(source, target)
+    slugs, changed, removed = sync_systems(source, target, version)
+    return colors, modules, slugs, changed, removed
+
+
+def main(argv):
+    parser = argparse.ArgumentParser(prog="sync-brand-colours", description=__doc__.split("\n\n")[0])
+    parser.add_argument("--source", type=Path, help="a local brand-colours checkout")
+    parser.add_argument("--target", type=Path, default=TARGET, help="the skill folder to write into")
+    args = parser.parse_args(argv)
+    with tempfile.TemporaryDirectory(prefix="brand-colours-") as tmp:
+        source = args.source.expanduser().resolve() if args.source else clone(Path(tmp) / "repo")
+        colors, modules, slugs, changed, removed = sync(source, args.target.expanduser().resolve())
+    print(f"{colors} library colours; {modules} generator modules changed; "
+          f"{len(slugs)} reference systems ({len(changed)} added or changed, {len(removed)} removed).")
+    for name in changed:
+        print(f"  updated  {name}")
+    for name in removed:
+        print(f"  removed  {name}")
+
+
+if __name__ == "__main__":
+    try:
+        main(sys.argv[1:])
+    except SyncError as e:
+        print(f"sync-brand-colours: {e}", file=sys.stderr)
+        sys.exit(1)

@@ -11,7 +11,7 @@ The flow is **page -> hook -> API -> service -> repository**, with schemas and t
 
 ## Detect the stack
 
-The tool reads `package.json` and prints `Stack: <stack> (detected), root: <dir>` before every command. Stacks: `next-fullstack`, `next-frontend`, `react`, `node` (Express, Fastify, Hono, or none), `nest`, `tanstack-start`. Override with `--stack <name>` if detection is wrong.
+The tool reads `package.json` and prints `Stack: <stack> (detected), root: <dir>` before every command. Stacks: `next-fullstack`, `next-frontend`, `react`, `node` (Express, Fastify, Hono, or none), `nest`, `tanstack-start`. Override with `--stack <name>` if detection is wrong. A Vite app with React and no Next.js, such as [vite-dashboard-starter](https://github.com/IsaacHatilima/vite-dashboard-starter), is the `react` stack: components, containers, hooks, schemas and types in the feature, with hooks calling an API that lives outside the project.
 Where features are written can be overridden too: `--root <dir>` for one command, or a `domainDriver.featureRoot` key in `package.json` for the project. Read the root off the stack line rather than assuming the convention.
 On Nest the tool registers what it generates: the feature module in the root module, and controllers, services and repositories in `<feature>.module.ts`. Do not add those by hand — it prints what it registered, and prints the lines to paste when it cannot. A bespoke action controller is placed before `Show<Entity>Controller` so its route is not swallowed by `/:id`.
 
@@ -46,6 +46,6 @@ Hooks are one file per action — `<Action><Entity>.hook.ts` exporting `use<Acti
 ## Layout by stack
 
 - Next.js: `app/<feature>` or `src/app/<feature>`; route handlers under `app/api/<feature>`.
-- React and Node: `src/features/<feature>` or `features/<feature>`.
+- React (including Vite) and Node: `src/features/<feature>` or `features/<feature>`. Nest a feature under another with `--root`, as the starter's auth screens do: `npx domain-driver --root src/features/auth make:feature two-factor-setup`.
 - Nest: `src/features/<feature>` when `src/features` exists, otherwise `src/<feature>`, with a `<feature>.module.ts`.
 - TanStack Start: `src/routes/<feature>` or `routes/<feature>`; every layer folder is prefixed with `-` so the router ignores it, and the entry file is `index.tsx`, not `page.tsx`.

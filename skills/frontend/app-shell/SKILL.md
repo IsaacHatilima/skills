@@ -1,62 +1,91 @@
 ---
 name: app-shell
-description: Use when building or reviewing the frame around signed-in screens (sidebar, header, page layout, the route after login), especially when the sidebar and body clash, the header scrolls away or crowds, a collapsed sidebar hides its options, pages repeat their title, or the shell lacks mobile, loading, or error states.
+description: Use when building or reviewing the frame around a web app's screens - choosing or changing the dashboard or auth shell, adding a page with its route, navigation item and breadcrumbs, the user menu and settings, page layout and density, or page-level loading, empty and error states - especially in projects built on the vite-dashboard starter.
 ---
 
 # App shell
 
-Applies to: the frame every signed-in screen shares. Project guidance and an existing design system win over these defaults. What opens over a page is in `overlays`; tables and charts are in `data-display`.
+Applies to: the frame every screen shares, signed-in and auth. The reference implementation is [vite-dashboard-starter](https://github.com/IsaacHatilima/vite-dashboard-starter) (React 19, Vite, react-router, shadcn/ui on Base UI, Tailwind v4). A project created from it keeps its shells, components and tokens: extend them, never build a parallel frame. Projects on another stack (Laravel/Inertia, Next, TanStack Start) follow the same structure and values. Project guidance wins. What opens over a page is in `overlays`, tables and charts in `data-display`, and colour in `brand/identity`.
 
-## Landing route
+## Shells
 
-- After login, go to the URL the user asked for, else `/dashboard`, as Laravel's starter kits and the Next.js tutorial do; `/` stays public. Signed-in visits to `/login` also go to `/dashboard`.
-- Accept only a same-origin path as the return URL, to block open redirects.
+The starter has four dashboard shells. Each takes only `children` (`ShellProps`) and reads the same navigation, so a project switches with one import in `src/layouts/dashboard-layout.tsx`:
+
+| Shell | Frame |
+|---|---|
+| `WorkspaceShell` | Full navigation, a toolbar with app-wide search, the page inset, and an assistant panel docked from 1280px and a drawer below |
+| `InsetShell` | The page floats as a rounded inset panel beside collapsible navigation sections |
+| `RailShell` | A 52px icon rail picks a section and a 288px panel lists its pages |
+| `ClassicShell` | A full-height sidebar with every section and page listed open |
+
+Auth screens use one of four frames in `src/layouts/auth-layout.tsx`: `SplitAuthShell` (form beside a photo), `CardAuthShell`, `MinimalAuthShell` and `PhotoAuthShell` (form over a full-page photo). Forms sit in the shared `AuthCard`, which adapts to the frame so cards never nest.
+
+- Change a shell in `src/components/shells/`, keeping its props identical so the others still swap in. Shared pieces (header, brand, user menu, skip link, sidebar state, active navigation) live in `shells/shared/`.
+- Never fork a shell for one page or wrap a page in its own sidebar. A page that needs a different frame is a new shell with the same props and navigation.
+
+## Adding a page
+
+1. Scaffold the feature with domain-driver (`npx domain-driver make:feature <feature>`). The page is the feature's container, `containers/<Entity>Container.tsx`, a default export that composes its components.
+2. Add the path to `src/config/routes.ts` and the route to `src/router.tsx` under `DashboardLayout` (or `AuthLayout`). Never hard-code a path elsewhere.
+3. Add the item to `mainNavigation` in `src/config/navigation.ts`: a section with its items, optional groups, and a distinct Lucide icon for every page, so collapsed navigation stays recognisable. Breadcrumbs, the active state and app search all come from this list. Settings pages go in `settingsNavigationGroups`.
+4. Set the tab title with `<PageTitle title="…" />`. The header's breadcrumbs name the page (section, then page); the page keeps one `h1`, visually hidden (`sr-only`) unless its layout needs a visible title.
+5. Unbuilt destinations use `PlaceholderPage` rather than a dead link.
+
+## Routes and redirects
+
+- `/` opens login, and a successful sign-in goes to `/dashboard`. Once a session exists, guard routes in `src/router.tsx`: signed-out visits to app routes go to login with a `?redirect=` back, and signed-in visits to auth routes go to the dashboard.
+- Read every return path through `safeRedirectPath()` (`src/lib/redirect.ts`), which accepts only same-origin paths, so `?redirect=` can't become an open redirect.
+- Unknown routes render `NotFoundPage` inside the shell, and route errors render `RouteErrorPage`.
+
+## Density
+
+The tokens live in `src/index.css`; components use them through utilities. Never hard-code these values, so density changes in one place.
+
+| Token | Value |
+|---|---|
+| `--app-header-height` | 46px, 50px under 640px |
+| `--app-gutter` | 24px, 16px at or below 900px |
+| `--app-page-top` | 28px, 20px at or below 900px |
+| Text | 13.5px body and navigation, 12.5px controls (`text-control`), 11px semibold group labels with 0.06em tracking (`text-label`), headings 14.5, 16, 19 and 23px |
+| `--control-height-xs/sm/-/lg` | 22, 26, 30 and 36px |
+| `--nav-row-height`, `--nav-item-gap` | 30px rows, 9px icon gap |
+| `--field-gap` | 14px between fields; 6px label gap |
+| Icons | Lucide at 16px for primary, 14px supporting, 12px metadata, with the global 1.8 stroke |
+
+Fonts are Geist and Geist Mono, bundled locally. Phones keep 40px touch targets and 16px input text so iOS doesn't zoom. Tables, boards and calendars take the full width; forms cap near 640px and prose near 70 characters.
 
 ## Surfaces
 
-- The document scrolls, not an inner panel, so scroll restoration and anchors work.
-- The sidebar has its own background, a step darker than the page in both themes, and one 1px border dimmer than card borders. Tone separates them; decorative borders need no contrast minimum.
-- The header has the page background: opaque, no bottom rule.
-- No inset card around the page, or page cards sit card on card.
-- Cards are lighter than the page. In dark mode each step up (card, popover, dialog) is lighter again, since shadows barely show.
+The starter's neutrals are tuned in both themes and stay as they are: the page background, a sidebar a step darker in light and the same as the page in dark, cards with a hairline border in light and a lighter surface in dark, and translucent borders. A project's brand arrives as accents (primary, focus ring, charts, status, and one brand accent) through `brand/identity`; never tint surfaces with a brand hue.
 
-## Sidebar
+- Use `Card` (its `border` prop removes the outline) for a separate object the user acts on, and `StackedCard` with `top` and `bottom` bands for a card with a header strip or footer actions. Group everything else with spacing and headings, never a card inside a card.
+- Theme is the `.dark` class, set by the theme provider from the user's choice or the system; the `D` key toggles it outside text fields.
 
-- Workspace switcher on top, since it scopes everything; no logo row. User menu at the bottom, since account actions are rare.
-- Two levels at most. Groups fold with a chevron, remembered per user; the current route's group starts open.
-- Active item: neutral fill, medium weight, accent icon, `aria-current="page"`. Brand fills stay on primary buttons.
-- Start expanded, because icons alone cost recognition. A toggle and Cmd/Ctrl+B collapse it to a 48px icon rail, saved in a cookie so the server renders it.
-- Rail icons get tooltips. A group's icon opens its items in a flyout on click, Enter, Space or a 100ms hover; Escape closes it and refocuses the icon.
-- Under 768px it becomes a modal drawer, opened from a header menu button and closed on navigation. From 768px show the rail; from 1024px, the full sidebar.
+## Header, search and menus
 
-## Header
+- The header is sticky at `--app-header-height` on the page background, holding the sidebar toggle and the breadcrumbs. `WorkspaceShell` adds its toolbar.
+- App search is the command palette on Cmd/Ctrl+K, over every page in `allNavigation`. It never filters the current page; page-level search lives in the page's toolbar.
+- The user menu sits at the bottom of the sidebar: Profile, Settings, theme and Log out. Settings opens a nested layout at `/settings/*` with its own grouped navigation, never items in the main navigation.
+- The sidebar is 252px wide and collapses with its toggle or Cmd/Ctrl+B, remembered in the `sidebar_state` cookie. Under 768px it becomes a drawer that closes when a link is followed.
 
-- Sticky and 48px, small enough to keep. Left: breadcrumbs ending with the unlinked page name. Right: search, notifications, and a "New" menu if creation is app-wide.
-- Search covers the whole app through the command palette (⌘K). It never filters the page, because a header field reads as global.
-- The bell lists unread items above a pinned "View all".
-- Set `scroll-padding-top` to the header height so focus never hides under it.
+## Page layout
 
-## Page
-
-- Name the page once, in the header; a title card only repeats it. Keep one `h1`, visually hidden if needed.
-- Record pages get a title row: identity and status left, actions right.
-- One labelled primary action per page, right of the title row or toolbar. Others are icon buttons with tooltips or sit in a "…" menu.
+- Record pages get a title row: identity and status on the left, actions on the right.
+- One labelled primary action per page, at the right of the title row or toolbar. Others are icon buttons with tooltips or sit in a "…" menu.
 - The toolbar is one row: tabs and filters left, search and the primary action right. Tabs live in the URL (`?view=board`), so reload keeps them.
-- Tables, boards and calendars take full width. Forms cap near 640px and prose near 70 characters, for readable lines.
-- Compact by default, so work fits: 13–14px text, 32px controls and rows, a 4px grid, 24px gutters. Phones get 16px gutters and 40px targets.
 
 ## States
 
-- Keep the shell mounted between routes. Loading shows a skeleton of the page, then progress after 10 seconds. Refreshes keep content visible.
-- Empty: say what belongs here and offer the action that adds it, or "Clear filters".
-- First run: point to the one key action, then a checklist ("4 of 6 complete").
-- Errors say what failed and offer Retry; no-access says who can grant it; 404s render inside the shell.
-- No refresh buttons; reloading does the same.
+- The shell stays mounted between routes. Loading shows a `Skeleton` of the page, then progress after 10 seconds; a refresh keeps the content visible. `Spinner` is for inline actions, not pages.
+- Empty states use `Empty`: say what belongs here and offer the action that adds it, or "Clear filters".
+- First run points to the one key action, then a checklist ("4 of 6 complete").
+- Errors say what failed and offer Retry; a no-access state says who can grant access.
+- Toasts come from Sonner, bottom centre, for about 5 seconds (see `overlays`). No refresh buttons; reloading does the same.
 
 ## Keyboard
 
-- A "Skip to main content" link comes first, visible on focus. Use `nav`, `header` and `main` landmarks.
-- `?` lists shortcuts. Single-key shortcuts never fire while typing.
-- Focus shows as a 2px outline at a 2px offset.
+- `SkipToContent` comes first and shows on focus. Keep the `header`, `nav` and `main` landmarks the shells render.
+- Shortcuts: Cmd/Ctrl+K search, Cmd/Ctrl+B sidebar, `D` theme. Single-key shortcuts never fire while typing. List them on the keyboard shortcuts settings page.
+- Focus is always visible through the ring token; `scroll-padding-top` matches the header height so focus never hides under it.
 
-Sources: [WCAG 2.2](https://www.w3.org/TR/WCAG22/), [OWASP](https://cheatsheetseries.owasp.org/cheatsheets/Unvalidated_Redirects_and_Forwards_Cheat_Sheet.html), NN/g ([navigation](https://www.nngroup.com/articles/vertical-nav/), [breadcrumbs](https://www.nngroup.com/articles/breadcrumbs/), [sticky headers](https://www.nngroup.com/articles/sticky-headers/), [skeletons](https://www.nngroup.com/articles/skeleton-screens/)), Material ([breakpoints](https://m3.material.io/foundations/layout/applying-layout), [dark theme](https://m2.material.io/design/color/dark-theme.html)), [Apple HIG](https://developer.apple.com/design/human-interface-guidelines/sidebars), [shadcn/ui](https://ui.shadcn.com/docs/components/sidebar), [Laravel](https://laravel.com/docs/starter-kits), [Next.js](https://nextjs.org/learn/dashboard-app/adding-authentication), and Kole Jain's [dashboard video](https://youtu.be/Ksx9C2-3yMo) for first-run steps.
+Sources: [vite-dashboard-starter](https://github.com/IsaacHatilima/vite-dashboard-starter) and its density notes (`docs/design/gr8r-density.md`), [WCAG 2.2](https://www.w3.org/TR/WCAG22/), [OWASP](https://cheatsheetseries.owasp.org/cheatsheets/Unvalidated_Redirects_and_Forwards_Cheat_Sheet.html), NN/g ([navigation](https://www.nngroup.com/articles/vertical-nav/), [breadcrumbs](https://www.nngroup.com/articles/breadcrumbs/), [skeletons](https://www.nngroup.com/articles/skeleton-screens/)), [shadcn/ui](https://ui.shadcn.com/docs/components/sidebar), and Kole Jain's [dashboard video](https://youtu.be/Ksx9C2-3yMo) for first-run steps.

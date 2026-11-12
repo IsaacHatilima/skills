@@ -7,6 +7,8 @@ description: Use when adding, choosing, or reviewing a dialog, modal, drawer, sh
 
 Applies to: anything that opens over or beside a page. Project guidance and an existing design system win over these defaults. The frame around pages is `app-shell`.
 
+In projects built on [vite-dashboard-starter](https://github.com/IsaacHatilima/vite-dashboard-starter), use its shared parts from `src/components/ui/`: `Dialog` (with `DialogBody`, which scrolls while header and footer stay put), `Drawer`, `Sheet`, `CommandDialog`, `DropdownMenu`, `Tooltip`, and the Sonner `Toaster` mounted once in `App`. Never wrap them in feature-specific copies. Their `stack` option gives dialogs, drawers and commands a layered edge, and `modal={false}` keeps the page interactive behind a drawer or sheet.
+
 ## Choose the lightest container
 
 Use the least interruptive container that fits, because a modal blocks the page and hides its context.
@@ -15,7 +17,8 @@ Use the least interruptive container that fits, because a modal blocks the page 
 - **Tooltip** names an icon or term, on hover and focus.
 - **Menu** holds actions on one object, behind a "…" or labelled button.
 - **Popover** holds a small form tied to its button: share, filter, date.
-- **Drawer** from the right shows a record beside its list, opened by a row click.
+- **Drawer** from the right shows a record beside its list, opened by a row click. In the starter it sits 8px in from the edge with rounded corners.
+- **Non-modal sheet** (`<Sheet modal={false}>`, up to 620px, flush to the edge) holds work the user does alongside the page, such as a task they edit while reading the list.
 - **Dialog** holds a short task that needs an answer (create, rename, confirm), opened by a button or shortcut.
 - **Page** holds long or multi-step work.
 - **Toast** reports a finished action.
@@ -26,7 +29,7 @@ Use the least interruptive container that fits, because a modal blocks the page 
 - Action menus open on click, Enter, Space or Down Arrow, never on hover, so they don't open by accident.
 - Give frequent creates a single-key shortcut, shown in the tooltip and menu.
 - Tooltips appear after a short hover delay, at once on focus, and hold nothing needed to finish the task. Every icon-only button has one.
-- Show one toast at a time, for about 5 seconds; an Undo toast stays until used or dismissed. Errors never go in a toast; show them where they happened.
+- Show one toast at a time, at the bottom centre, for about 5 seconds (`toast.success("Changes saved")`); an Undo toast stays until used or dismissed. Errors never go in a toast; show them where they happened.
 
 ## Placing actions
 
@@ -44,16 +47,16 @@ Place each action by frequency and importance: a labelled button (primary create
 ## Destructive actions
 
 - Do reversible actions at once and offer Undo, because people click through routine confirmations.
-- Confirm only what can't be undone. Name the object and the consequence, and label buttons with the action ("Delete project", "Cancel"), never Yes, No or OK. Make the destructive button red.
+- Confirm only what can't be undone. Name the object and the consequence, and label buttons with the action ("Delete project", "Cancel"), never Yes, No or OK. Make the destructive button the `destructive` variant, never a hand-picked red.
 - Ask for a typed name only in the rarest, worst cases, such as deleting a workspace.
 - Put destructive menu items last, after a separator, away from routine slips.
 
 ## Stacking, size and backdrop
 
-- One modal layer at a time, because people lose track of stacked layers. If a step needs another dialog, replace the first; only a confirmation may sit over a form. Menus and popovers inside a dialog are fine.
-- Widths: 420px for confirmations, 560px for forms and drawers, 720px at most.
+- One modal layer at a time, because people lose track of stacked layers. If a step needs another dialog, replace the first; only a confirmation may sit over a form. Menus and popovers inside a dialog are fine. The exception is a drawer opened from inside a drawer's content: the starter detects the nesting, stacks the parent behind it, and returns to it on close.
+- Widths: the starter's `Dialog` defaults to 24rem, right for confirmations; widen forms to about 560px with a class, and 720px at most.
 - Cap height at 85vh. Header and footer stay pinned and opaque; only the body scrolls, with room for focus rings.
-- Dim the page, don't blur it: about 15% black in light mode and 30% in dark, blur at most 4px, so the page stays readable. Menus, popovers and tooltips get no backdrop.
+- Dim the page without blurring it, through the `--dialog-overlay` token: 30% black in light mode and 50% in dark, so the page stays readable. Menus, popovers, tooltips and non-modal sheets get no backdrop.
 - Lock page scroll behind modal layers.
 
 ## Mobile
