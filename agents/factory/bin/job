@@ -35,6 +35,7 @@ from datetime import datetime, timezone  # noqa: E402
 from pathlib import Path  # noqa: E402
 
 from factorylib import github  # noqa: E402
+from factorylib.cost import short_tokens  # noqa: E402
 from factorylib.jobfiles import (  # noqa: E402
     all_jobs, job_dir, now, prompt_header, resolve, save)
 from factorylib.project import (  # noqa: E402
@@ -88,7 +89,7 @@ def cmd_create(number):
         "stage": "intake", "round": 0, "round_limit": config()["max_rounds"], "round_base": None,
         "intake": None, "agents": None, "gate": None, "reviews": {},
         "outcome": None, "escalation": None, "doc": None, "doc_base": None, "doc_head": None,
-        "skills": skills, "cost_usd": 0.0, "started": now(), "ended": None,
+        "skills": skills, "cost_usd": 0.0, "tokens": 0, "started": now(), "ended": None,
     }
     github.write_issue_md(job)
     save(job)
@@ -226,16 +227,17 @@ def elapsed(job):
 
 def cmd_summary(args):
     jobs = [resolve(a) for a in args] if args else all_jobs()
-    rows = [("job", "issue", "stage", "round", "pr", "docs", "cost", "time")]
+    rows = [("job", "issue", "stage", "round", "pr", "docs", "cost", "tokens", "time")]
     for j in jobs:
         sync(j)  # for display only; the orchestrator owns the saved state
         rows.append((j["id"], f"#{j['issue']}", j["stage"], str(j["round"]),
                      f"#{j['pr']}" if j["pr"] else "-", j.get("doc") or "-",
-                     f"${j['cost_usd']:.2f}", elapsed(j)))
+                     f"${j['cost_usd']:.2f}", short_tokens(j.get("tokens", 0)), elapsed(j)))
     widths = [max(len(r[i]) for r in rows) for i in range(len(rows[0]))]
     for r in rows:
         print("  ".join(c.ljust(w) for c, w in zip(r, widths, strict=True)).rstrip())
-    print(f"total ${sum(j['cost_usd'] for j in jobs):.2f} (API-equivalent, Claude Code factory agents only)")
+    print(f"total ${sum(j['cost_usd'] for j in jobs):.2f} API-equivalent for models priced in config.json, "
+          f"{short_tokens(sum(j.get('tokens', 0) for j in jobs))} tokens (Claude Code and Codex subagents)")
 
 
 def cmd_init(args):
