@@ -1,6 +1,6 @@
 ---
 name: factory
-description: Start the factory workflow only when explicitly invoked as /factory in Claude Code or $factory in Codex with a feature request, approve command, or rework command.
+description: Run the software factory on GitHub issues labeled `factory`. Use only when explicitly invoked as /factory in Claude Code or $factory in Codex, followed by setup, run, run <n>, grill <n>, or anything else (a question, feedback on a job, rejecting a job, or a new feature).
 disable-model-invocation: true
 ---
 
@@ -8,6 +8,6 @@ disable-model-invocation: true
 
 Read [AGENT.md](AGENT.md) beside this file and follow it as the workflow entrypoint. Pass the user's request unchanged.
 
-This file is the host command adapter. The workflow definition, child-agent roles, and skill-selection rules live in this agent bundle. Reusable capabilities live in the separate shared skills library resolved by the workflow.
+This file is the host command adapter. The orchestration lives in AGENT.md, the deterministic stages in `bin/`, and the project templates in `templates/`. The child agents are installed separately, in `.claude/agents/` and `.codex/agents/`. Reusable capabilities live in the shared skills library resolved through the skill catalog.
 
-Keep the bundle together when installing this adapter so its local references remain readable.
+Keep the bundle together when installing this adapter so its local references and scripts remain readable.

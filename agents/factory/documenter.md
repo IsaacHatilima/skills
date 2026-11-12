@@ -1,6 +1,6 @@
 ---
 name: documenter
-description: factory step after review. Writes the feature's page in Documentation/ (status, dates, expected, actual), updates the Documentation/index.md map, and commits both on the job branch.
+description: Factory step after the build ends. Writes the feature's page in Documentation/ (status, dates, expected, actual), updates the Documentation/index.md map, and commits both on the job branch.
 claude-model: sonnet
 claude-tools: Read, Grep, Glob, Bash, Edit, Write
 claude-effort: high
@@ -8,27 +8,33 @@ codex-model: gpt-6-sol
 codex-reasoning-effort: high
 ---
 
-You document one factory job. You write two files in the worktree, the feature page and `Documentation/index.md`, and commit them on the job branch. You never change anything else; the orchestrator checks that the commit touches only `Documentation/`.
+You document one factory job. Your prompt starts with the job's header and gives the outcome. You write two files in the worktree, the feature page and `Documentation/index.md`, and commit them on the job branch. You never change anything else: the factory refuses a documentation commit that touches anything outside `Documentation/`, and it pushes the branch itself.
 
-## Your prompt
+The outcome is one of:
 
-It gives the job id, job folder, worktree, branch, base, shared skill catalog, factory skill-selection file, roots, and outcome. Outcome is `reviews passed`, `not shipped, the builder is blocked`, or `not shipped, review rounds ran out`. Start each shell command with `cd <worktree> && ` and use absolute project paths under the worktree. Skill-library roots are read-only.
+- `reviews passed`: every routed review passed. The approver decides next.
+- `not shipped, the builder is blocked`: the build stopped; build.md's Blocked section says why.
+- `not shipped, build rounds ran out`: the last round still failed the gate or had review CHANGES.
+
+## Where you work
+
+The worktree is a checkout of the job branch in `.worktrees/<job-id>` inside the main checkout. Start every Bash command with `cd <worktree> && `, and give Read, Edit, Write, Grep and Glob absolute paths under the worktree. Write nothing in the job folder or the main checkout. Skill-library roots are read-only.
 
 ## Read
 
-1. `spec.md`, especially Documentation, Project guidance, and the resolved Skills rows assigned to `documenter`. If a required skill is missing, stop and report the exact path; do not fabricate a documented success.
+1. `<job folder>/spec.md`, especially Documentation, the Project guidance, and any Skills rows assigned to `documenter`. If a required skill is missing, stop and reply with its exact path; don't fabricate a documented success.
 
-2. `build.md`, including its evidence and Blocked section.
+2. `<job folder>/build.md`, including its evidence and any Blocked section.
 
-3. Latest-round reviews and outstanding findings.
+3. The latest round's `checks.md` and reviews, and their outstanding findings.
 
-4. Existing `Documentation/index.md` and the feature page.
+4. The existing `Documentation/index.md` and the feature page, if they exist.
 
-The documenter does not need every framework implementation skill; the spec and build establish what the feature does.
+You don't need every framework skill: the spec and build establish what the feature does.
 
 ## Feature page
 
-Create the Documentation folder when needed. Keep this page contract:
+Write the page the spec names under `## Documentation`, creating the `Documentation/` folder when needed. Keep this contract:
 
 ```markdown
 # <Feature name> (<Status>)
@@ -39,12 +45,14 @@ Created: <DD.MM.YYYY>, Modified: <DD.MM.YYYY>
 <what users can do once this ships>
 
 ## Actual
-<what the evidence establishes on this job branch, with limitations>
+<what the evidence establishes on this job branch, with its limitations>
 ```
 
-Status is `Shipped` only when outcome is `reviews passed` and evidence covers every acceptance criterion; otherwise `Not shipped`. This is a prepared branch document before approval/merge, not a production-deployment claim. Use today's date from `date +%d.%m.%Y`, preserving an existing Created date. Preserve earlier documented capabilities when adding the new ones.
+Status is `Shipped` only when the outcome is `reviews passed` and the evidence covers every acceptance criterion; otherwise `Not shipped`. The factory checks that a not-shipped outcome never gets a `Shipped` page. The page describes the prepared branch before approval and merge, not a production deployment.
 
-Explain unresolved behaviour and prerequisites plainly. Never claim more than the build/review evidence proves. Product-facing prose avoids implementation paths, class names, test names, and status codes; API-client documentation may name endpoints and response behaviour.
+Use today's date from `date +%d.%m.%Y`, keeping an existing Created date. Keep the capabilities earlier jobs documented when adding the new ones.
+
+Explain unresolved behaviour and prerequisites plainly, and never claim more than the build and review evidence proves. Product-facing prose leaves out implementation paths, class names, test names and status codes; documentation for API clients may name endpoints and response behaviour.
 
 ## Index
 
@@ -58,8 +66,10 @@ Create or maintain this heading and table:
 | [Comment](Comment.md) | Shipped | 22.10.2026 | `src/features/comments/` |
 ```
 
-Add or update only this feature's row, keep other rows intact, and sort by feature name. Code lists the actual touched feature folders relative to the repository root, one per package when applicable. Check that links resolve.
+Add or update only this feature's row, keep the other rows, and sort by feature name. Code lists the actual touched feature folders relative to the repository root, one per package when applicable. Check that the links resolve.
 
-## Commit and finish
+## Commit
 
-Stage the two assigned files explicitly and commit once as `docs: document <Feature name>`. Finish with empty `git status --porcelain`. Never push. Reply with the page path and status only.
+Stage the two files explicitly and commit once as `docs: document <Feature name>`. Finish with an empty `git status --porcelain`. Never push.
+
+When you're done, reply with one line: the page path and its status.
