@@ -1,0 +1,428 @@
+#!/usr/bin/env python3
+"""Install bundles of skills, and the factory, for your user account or into one project.
+
+Usage:
+  ./install <bundle> [<bundle> ...] [--project <dir>] [--host claude|codex|both] [--force]
+  ./install --list
+
+Bundles are named sets of skills and workflows in bundles.json, such as
+`basic`, `web`, `api` and `all`. Several bundles install their union. Without
+--project, everything goes into your home directory, for every project.
+
+Every skill has one copy, in <root>/.ai/skills/, with <root> your home
+directory or the project. Agents find it through a managed block in the
+instruction files: AGENTS.md and CLAUDE.md in a project, or ~/.codex/AGENTS.md
+and ~/.claude/CLAUDE.md for your account.
+
+  <root>/.ai/skills/<group>-<name>/       each skill
+  <root>/.ai/skills/catalog.md            the catalog the factory resolves skills from
+  <root>/.ai/skills/factory/              the factory: AGENT.md, bin/, templates/, references/
+  <root>/.claude/skills/factory/SKILL.md  a pointer that makes /factory a Claude Code command
+  <root>/.agents/skills/factory/SKILL.md  a pointer that makes $factory a Codex skill
+  <root>/.claude/agents/<role>.md         the factory's nine agents for Claude Code
+  <root>/.codex/agents/<role>.toml        the factory's nine agents for Codex
+
+Each agent keeps the model, reasoning effort and tools set in its source file
+under agents/factory/. The instruction files keep everything outside their
+block. Other existing files that differ are left alone unless you pass --force;
+when any would be overwritten, nothing is written. After
+installing the factory, run `/factory setup` (`$factory setup` in Codex) once in
+each project.
+"""
+
+import argparse
+import json
+import re
+import sys
+from pathlib import Path
+
+SOURCE = Path(__file__).resolve().parent
+FACTORY = SOURCE / "agents" / "factory"
+SKILLS = SOURCE / "skills"
+BUNDLES = SOURCE / "bundles.json"
+WORKFLOWS = ("factory",)
+ROLE_FIELDS = ("name", "description", "claude-model", "claude-tools", "claude-effort",
+               "codex-model", "codex-reasoning-effort")
+FACTORY_FILES = ("AGENT.md", "LICENSE", "references/skills.md")
+FACTORY_DIRS = ("bin", "templates")
+EXECUTABLE = {"bin/job", "bin/gate", "bin/route", "templates/checks.sh"}
+NOT_ROLES = {"AGENT.md", "SKILL.md", "README.md"}
+SKILLS_HOME = ".ai/skills"
+BLOCK_START, BLOCK_END = "<!-- skills:start -->", "<!-- skills:end -->"
+
+
+class InstallError(Exception):
+    pass
+
+
+# ---- Bundles -------------------------------------------------------------------
+
+
+def skill_ids():
+    """Every skill in the library, as <group>/<name>."""
+    return sorted(f"{p.parent.parent.name}/{p.parent.name}" for p in SKILLS.glob("*/*/SKILL.md"))
+
+
+def load_bundles():
+    try:
+        return json.loads(BUNDLES.read_text())
+    except (OSError, json.JSONDecodeError) as e:
+        raise InstallError(f"can't read {BUNDLES.name}: {e}") from e
+
+
+def match(patterns, names, label):
+    """Names matching `*`, `<group>/*` or an exact id. Every pattern must match something."""
+    out = set()
+    for pattern in patterns:
+        found = {n for n in names if pattern == "*" or n == pattern
+                 or (pattern.endswith("/*") and n.startswith(pattern[:-1]))}
+        if not found:
+            raise InstallError(f"{label}: {pattern!r} matches nothing")
+        out |= found
+    return out
+
+
+def expand(name, bundles, seen=()):
+    """(skill ids, workflows) of one bundle, including the bundles it includes."""
+    if name not in bundles:
+        raise InstallError(f"unknown bundle {name!r}; have: {', '.join(sorted(bundles))}")
+    if name in seen:
+        raise InstallError(f"bundle {name!r} includes itself through {' → '.join(seen)}")
+    bundle = bundles[name]
+    skills = match(bundle.get("skills", []), skill_ids(), f"bundle {name}")
+    workflows = match(bundle.get("workflows", []), WORKFLOWS, f"bundle {name}")
+    for included in bundle.get("include", []):
+        more_skills, more_workflows = expand(included, bundles, (*seen, name))
+        skills |= more_skills
+        workflows |= more_workflows
+    return skills, workflows
+
+
+def resolve(names):
+    bundles = load_bundles()
+    skills, workflows = set(), set()
+    for name in names:
+        more_skills, more_workflows = expand(name, bundles)
+        skills |= more_skills
+        workflows |= more_workflows
+    return sorted(skills), sorted(workflows)
+
+
+def listing():
+    bundles = load_bundles()
+    lines = []
+    for name in bundles:
+        skills, workflows = expand(name, bundles)
+        extra = f" + {', '.join(sorted(workflows))}" if workflows else ""
+        lines.append(f"  {name:<10} {len(skills)} skills{extra}. {bundles[name].get('description', '')}")
+    return "Bundles (bundles.json):\n" + "\n".join(lines)
+
+
+# ---- Reading the sources ---------------------------------------------------
+
+
+def unquote(value):
+    if value.startswith('"'):
+        return json.loads(value)
+    if value.startswith("'"):
+        return value[1:-1].replace("''", "'")
+    return value
+
+
+def frontmatter(text, label):
+    m = re.match(r"---\n(.*?)\n---\n\n?", text, re.S)
+    if not m:
+        raise InstallError(f"{label}: no YAML frontmatter")
+    fields = {}
+    for line in m.group(1).splitlines():
+        key, sep, value = line.partition(":")
+        if not sep or not value.strip() or value.strip()[0] in ">|":
+            raise InstallError(f"{label}: expected a single-line `key: value`, got {line!r}")
+        fields[key.strip()] = unquote(value.strip())
+    return fields, text[m.end():]
+
+
+def roles():
+    """(frontmatter, body) of each factory role, from agents/factory/<role>.md."""
+    out = []
+    for path in sorted(FACTORY.glob("*.md")):
+        if path.name in NOT_ROLES:
+            continue
+        fields, body = frontmatter(path.read_text(), path.name)
+        missing = [k for k in ROLE_FIELDS if not fields.get(k)]
+        if missing:
+            raise InstallError(f"{path.name}: missing {', '.join(missing)}")
+        if fields["name"] != path.stem:
+            raise InstallError(f"{path.name}: name {fields['name']!r} doesn't match the file name")
+        out.append((fields, body))
+    return out
+
+
+def files_under(root):
+    for path in sorted(root.rglob("*")):
+        if path.is_symlink():
+            raise InstallError(f"{path}: symlinks aren't installed")
+        if path.is_file() and "__pycache__" not in path.parts and path.name != ".DS_Store":
+            yield path
+
+
+# ---- Rendering ---------------------------------------------------------------
+
+
+def yaml_single_quoted(value):
+    return "'" + value.replace("'", "''") + "'"
+
+
+def claude_agent(fields, body, factory_ref):
+    lines = [
+        "---",
+        f"name: {fields['name']}",
+        f"description: {json.dumps(fields['description'])}",
+        f"tools: {fields['claude-tools']}",
+        f"model: {fields['claude-model']}",
+        f"effort: {fields['claude-effort']}",
+    ]
+    if fields.get("claude-stop-hook"):
+        command = f"{factory_ref}/{fields['claude-stop-hook']}"
+        lines += ["hooks:", "  Stop:", "    - hooks:", "        - type: command",
+                  f"          command: {yaml_single_quoted(command)}"]
+    return "\n".join(lines + ["---", "", body])
+
+
+def codex_agent(fields, body):
+    if "'''" in body:
+        raise InstallError(f"{fields['name']}: the body can't contain ''' (TOML literal string)")
+    return (f"name = {json.dumps(fields['name'])}\n"
+            f"description = {json.dumps(fields['description'])}\n"
+            f"model = {json.dumps(fields['codex-model'])}\n"
+            f"model_reasoning_effort = {json.dumps(fields['codex-reasoning-effort'])}\n"
+            f"developer_instructions = '''\n{body}'''\n")
+
+
+def factory_files():
+    """(relative path, bytes) for the factory's skill folder."""
+    out = [(rel, (FACTORY / rel).read_bytes()) for rel in FACTORY_FILES]
+    for d in FACTORY_DIRS:
+        out += [(str(p.relative_to(FACTORY)), p.read_bytes()) for p in files_under(FACTORY / d)]
+    return out
+
+
+def skill_files(ids):
+    """(native folder name, relative path, bytes) for each file of each skill."""
+    out = []
+    for skill_id in ids:
+        group, name = skill_id.split("/")
+        skill, native = SKILLS / group / name, f"{group}-{name}"
+        for path in files_under(skill):
+            data = path.read_bytes()
+            if path.name == "SKILL.md" and path.parent == skill:
+                text, count = re.subn(r"^name: .+$", f"name: {native}", data.decode(), count=1, flags=re.M)
+                if not count:
+                    raise InstallError(f"{path}: no `name:` line")
+                data = text.encode()
+            out.append((native, str(path.relative_to(skill)), data))
+    return out
+
+
+# ---- Planning and writing ------------------------------------------------------
+
+
+def skills_ref(user):
+    """How instructions name the skills folder: from the project root, or from home."""
+    return f"~/{SKILLS_HOME}" if user else SKILLS_HOME
+
+
+def factory_adapter(user):
+    """The SKILL.md that registers the command and points at the one factory copy."""
+    fields, _ = frontmatter((FACTORY / "SKILL.md").read_text(), "SKILL.md")
+    factory = f"{skills_ref(user)}/factory"
+    return "\n".join([
+        "---", f"name: {fields['name']}", f"description: {json.dumps(fields['description'])}",
+        f"disable-model-invocation: {fields['disable-model-invocation']}", "---", "",
+        "# Factory command", "",
+        f"Read `{factory}/AGENT.md` and follow it as the workflow entrypoint. Pass the user's request unchanged. "
+        f"`<bin>` in AGENT.md is `{factory}/bin`.", "",
+        f"The factory has one copy, in `{factory}/`. This file only makes it a command.", "",
+    ])
+
+
+def plan_factory(files, root, hosts, user):
+    bundle = root / SKILLS_HOME / "factory"
+    for rel, data in factory_files():
+        files[bundle / rel] = (data, rel in EXECUTABLE)
+    adapter = factory_adapter(user).encode()
+    if "claude" in hosts:
+        files[root / ".claude" / "skills" / "factory" / "SKILL.md"] = (adapter, False)
+    if "codex" in hosts:
+        files[root / ".agents" / "skills" / "factory" / "SKILL.md"] = (adapter, False)
+        files[root / ".agents" / "skills" / "factory" / "agents" / "openai.yaml"] = (
+            (FACTORY / "agents" / "openai.yaml").read_bytes(), False)
+    factory_ref = ('"$HOME"' if user else '"$CLAUDE_PROJECT_DIR"') + f"/{SKILLS_HOME}/factory"
+    for fields, body in roles():
+        if "claude" in hosts:
+            files[root / ".claude" / "agents" / f"{fields['name']}.md"] = (
+                claude_agent(fields, body, factory_ref).encode(), False)
+        if "codex" in hosts:
+            files[root / ".codex" / "agents" / f"{fields['name']}.toml"] = (
+                codex_agent(fields, body).encode(), False)
+
+
+def plan(root, hosts, skills, workflows, user):
+    """Every file to write: {absolute path: (bytes, executable)}."""
+    files = {}
+    if "factory" in workflows:
+        plan_factory(files, root, hosts, user)
+    if skills or workflows:
+        files[root / SKILLS_HOME / "catalog.md"] = ((SKILLS / "catalog.md").read_bytes(), False)
+    for native, rel, data in skill_files(skills):
+        files[root / SKILLS_HOME / native / rel] = (data, False)
+    return files
+
+
+# ---- Instruction files ---------------------------------------------------------
+
+
+def instruction_files(root, hosts, user):
+    """The files whose managed block tells each agent where the skills are."""
+    if user:
+        return ([root / ".codex" / "AGENTS.md"] if "codex" in hosts else []) + \
+               ([root / ".claude" / "CLAUDE.md"] if "claude" in hosts else [])
+    claude = root / "CLAUDE.md"
+    # A CLAUDE.md that imports AGENTS.md would load the block twice.
+    imports_agents = claude.exists() and re.search(r"^@AGENTS\.md\s*$", claude.read_text(), re.M)
+    out = []
+    if "codex" in hosts or ("claude" in hosts and imports_agents):
+        out.append(root / "AGENTS.md")
+    if "claude" in hosts and not imports_agents:
+        out.append(claude)
+    return out
+
+
+def installed_skills(root, files):
+    """{folder: description} for every skill in the skills folder once these files are written."""
+    home = root / SKILLS_HOME
+    pages = {p.parent.name: p.read_text() for p in home.glob("*/SKILL.md")}
+    pages |= {p.parent.name: data.decode() for p, (data, _) in files.items()
+              if p.name == "SKILL.md" and p.parent.parent == home}
+    out = {}
+    for name, text in sorted(pages.items()):
+        try:
+            out[name] = frontmatter(text, name)[0].get("description", "")
+        except InstallError:
+            out[name] = ""
+    return out
+
+
+def skills_block(skills, user, factory):
+    where = skills_ref(user)
+    when = lambda text: re.sub(r"^use when\s+", "", text, flags=re.I).replace("|", "/")  # noqa: E731
+    rows = [f"| `{name}` | {when(description)} |" for name, description in skills.items()]
+    lines = [
+        BLOCK_START, "## Skills", "",
+        f"Agent skills live in `{where}/`, one folder per skill with a `SKILL.md`. Before work that a skill "
+        f"covers, read its `SKILL.md` in full and follow it; these instructions win where they differ. "
+        f"`{where}/catalog.md` indexes them and maps a skill id such as `laravel/actions` to its folder, "
+        "`laravel-actions`; a skill that names another one by its bare name means the same group.", "",
+        "| Skill | Use when |", "|---|---|", *rows,
+    ]
+    if factory:
+        lines += ["", f"The software factory runs as `/factory` in Claude Code and `$factory` in Codex; its "
+                      f"workflow is `{where}/factory/AGENT.md`."]
+    return "\n".join(lines + ["", "Installed by the skills repository's `./install`; edit outside this block.",
+                               BLOCK_END])
+
+
+def merge_block(text, block):
+    """Replace the managed block, or append it after a blank line."""
+    pattern = re.compile(re.escape(BLOCK_START) + r".*?" + re.escape(BLOCK_END), re.S)
+    if pattern.search(text):
+        return pattern.sub(lambda _: block, text, count=1)
+    return (text.rstrip("\n") + "\n\n" if text.strip() else "") + block + "\n"
+
+
+def plan_instructions(files, root, hosts, user):
+    """Add each instruction file, merged, to files. Returns their paths."""
+    skills = {k: v for k, v in installed_skills(root, files).items() if k != "factory"}
+    factory = (root / SKILLS_HOME / "factory" / "AGENT.md") in files or \
+        (root / SKILLS_HOME / "factory" / "AGENT.md").exists()
+    if not skills and not factory:
+        return set()
+    block = skills_block(skills, user, factory)
+    paths = instruction_files(root, hosts, user)
+    for path in paths:
+        current = path.read_text() if path.exists() else ""
+        files[path] = (merge_block(current, block).encode(), False)
+    return set(paths)
+
+
+def conflicts(files, merged=frozenset()):
+    return sorted(str(p) for p, (data, _) in files.items()
+                  if p not in merged and p.exists() and p.read_bytes() != data)
+
+
+def write(files):
+    written = 0
+    for path, (data, executable) in sorted(files.items()):
+        if path.exists() and path.read_bytes() == data and (not executable or path.stat().st_mode & 0o111):
+            continue
+        path.parent.mkdir(parents=True, exist_ok=True)
+        if path.is_symlink():
+            path.unlink()
+        path.write_bytes(data)
+        path.chmod(0o755 if executable else 0o644)
+        written += 1
+    return written
+
+
+def parse_args(argv):
+    parser = argparse.ArgumentParser(prog="install", description=__doc__.split("\n\n")[0])
+    parser.add_argument("bundles", nargs="*", help="bundles from bundles.json, such as basic, web, api or all")
+    parser.add_argument("--list", action="store_true", help="list the bundles and exit")
+    target = parser.add_mutually_exclusive_group()
+    target.add_argument("--project", type=Path, help="install into this project instead of your home directory")
+    target.add_argument("--user", action="store_true", help="install into your home directory (the default)")
+    parser.add_argument("--host", choices=("claude", "codex", "both"), default="both")
+    parser.add_argument("--force", action="store_true", help="overwrite existing files that differ")
+    args = parser.parse_args(argv)
+    if not args.bundles and not args.list:
+        parser.error("name at least one bundle, or run --list to see them")
+    return args
+
+
+def summary(root, skills, workflows, hosts, written, total):
+    lines = [f"{written} of {total} files written under {root} ({total - written} already current).",
+             f"Skills: {len(skills)} ({', '.join(sorted({s.split('/')[0] for s in skills})) or 'none'})."]
+    if "factory" in workflows:
+        lines.append("Factory installed. In each project, run once:")
+        if "claude" in hosts:
+            lines.append("  Claude Code:  /factory setup     then  /factory run")
+        if "codex" in hosts:
+            lines.append("  Codex:        $factory setup     then  $factory run   (Codex invokes skills with $, not /)")
+    return "\n".join(lines)
+
+
+def main(argv):
+    args = parse_args(argv)
+    if args.list:
+        print(listing())
+        return
+    root = args.project.expanduser().resolve() if args.project else Path.home()
+    if not root.is_dir():
+        raise InstallError(f"{root} isn't a directory")
+    hosts = ("claude", "codex") if args.host == "both" else (args.host,)
+    skills, workflows = resolve(args.bundles)
+    files = plan(root, hosts, skills, workflows, user=not args.project)
+    merged = plan_instructions(files, root, hosts, user=not args.project)
+    clashes = conflicts(files, merged)
+    if clashes and not args.force:
+        raise InstallError("these files exist and differ; rerun with --force to overwrite them:\n  "
+                           + "\n  ".join(clashes))
+    print(summary(root, skills, workflows, hosts, write(files), len(files)))
+
+
+if __name__ == "__main__":
+    try:
+        main(sys.argv[1:])
+    except InstallError as e:
+        print(f"install: {e}", file=sys.stderr)
+        sys.exit(1)

@@ -4,14 +4,14 @@ Any workflow can select skills from this library. Selection depends on its task,
 
 ## Resolve skill files
 
-Canonical paths below are relative to the library root containing this `catalog.md`. In this repository that root is `skills/`. Workflows pass the actual catalog path and available library roots to their agents.
+Canonical paths below are relative to the library root containing this `catalog.md`. In the skills repository that root is `skills/`, with grouped folders such as `laravel/actions/SKILL.md`. Installed, every skill has a single copy in a flat folder named `<group>-<name>`: `.ai/skills/laravel-actions/SKILL.md` in a project, or under `~/.ai/skills/` for the user. The project's `AGENTS.md` and `CLAUDE.md` point agents there.
 
 Resolve a selected skill in this order:
 
-1. A project-local copy in the target worktree's `.agents/skills/`, `.claude/skills/`, or `.ai/skills/`, using the group-prefixed folder name, such as `laravel-actions/SKILL.md`.
-2. Supplied library roots in their stated order. Use the canonical grouped path, or the group-prefixed folder name in a flat native root.
+1. The project's `.ai/skills/<group>-<name>/SKILL.md`, in the target worktree or, when the worktree doesn't carry it, the main checkout.
+2. Supplied library roots in their stated order, such as `~/.ai/skills/`: the group-prefixed folder in a flat root, or the canonical grouped path in a library checkout.
 
-Read the actual file and record its absolute path. Conflicting copies at the same priority require an explicit selection. Library roots outside the target worktree are read-only inputs. Do not infer another checkout's location or load every skill in a group.
+Read the actual file and record its absolute path. Conflicting copies at the same priority require an explicit selection. Library roots outside the target worktree are read-only inputs. Do not infer another checkout's location or load every skill in a group. A skill that names another by its bare name, such as "see `actions`", means the skill of that name in its own group.
 
 Report a missing required skill through the invoking workflow's blocked/reporting contract, naming the skill and canonical path. Missing unused groups do not block a task. Project guidance takes precedence over defaults; skill selection does not expand write ownership or authorize external effects.
 
@@ -25,7 +25,7 @@ Each stack folder has its own action skill, written only for that framework. Sel
 
 | Stack | Skill id | Canonical path |
 |---|---|---|
-| Laravel | laravel/actions | installed by Laracanon: `.agents/skills/laravel-actions/SKILL.md` |
+| Laravel | laravel/actions | `laravel/actions/SKILL.md` |
 | Nest | nest/actions | `nest/actions/SKILL.md` |
 | Next | next/actions | `next/actions/SKILL.md` |
 | TanStack Start | tanstack-start/actions | `tanstack-start/actions/SKILL.md` |
@@ -38,26 +38,26 @@ Each stack folder has its own action skill, written only for that framework. Sel
 
 ## Laravel
 
-Laravel conventions are maintained in [Laracanon](https://github.com/IsaacHatilima/laracanon), not in this library. `php artisan canon:install` writes each one into the project as `.agents/skills/laravel-<name>/`, so they resolve only through a project-local copy (step 1 above). Each skill lists the paths it applies to. Business operations use `laravel/actions`.
+Laravel 13 conventions, including React and Inertia inside a Laravel app (`laravel/frontend`). Each skill lists the paths it applies to. Business operations use `laravel/actions`; scaffolding uses Artisan, never domain-driver.
 
-| Skill id | Installed path | Use when |
+| Skill id | Canonical path | Use when |
 |---|---|---|
-| laravel/actions | `.agents/skills/laravel-actions/SKILL.md` | Creating, refactoring, or reviewing a Laravel action or operation service that queries, writes, or makes a business decision. |
-| laravel/api-responses | `.agents/skills/laravel-api-responses/SKILL.md` | Adding or changing a Laravel JSON API endpoint, its response envelope or pagination output, or how API errors such as 401, 403, 404, 422, 429, and 500 are rendered. |
-| laravel/architecture | `.agents/skills/laravel-architecture/SKILL.md` | Placing new Laravel behaviour, naming a new class, planning a feature or refactor, or reviewing where queries, validation, authorization, and responses belong. |
-| laravel/controllers | `.agents/skills/laravel-controllers/SKILL.md` | Adding or changing Laravel controllers or routes, wiring a FormRequest and action to an endpoint, or choosing between an API response, Inertia page, and redirect. |
-| laravel/data | `.agents/skills/laravel-data/SKILL.md` | Creating or changing Laravel input Data classes, output Resources, or the frontend-facing representation of a model, including partial updates. |
-| laravel/eloquent-strictness | `.agents/skills/laravel-eloquent-strictness/SKILL.md` | Enabling Eloquent strict mode, or when fixing a lazy-loading, missing-attribute, or discarded-attribute violation or an N+1 query. |
-| laravel/enums | `.agents/skills/laravel-enums/SKILL.md` | Adding or changing a PHP enum used by a Laravel model, or its stored values, labels, validation, or select options. |
-| laravel/frontend | `.agents/skills/laravel-frontend/SKILL.md` | Adding or changing React or Inertia pages, page props, Wayfinder routes, forms, or shared UI in a Laravel application's resources/js. |
-| laravel/insights | `.agents/skills/laravel-insights/SKILL.md` | Adding or running PHP Insights in a Laravel application, or when Insights reports a finding. |
-| laravel/jobs | `.agents/skills/laravel-jobs/SKILL.md` | Adding or reviewing Laravel queued jobs, listeners, or background work such as exports, reports, webhooks, imports, and notifications, or when a request is slow because it does work the user doesn't need to wait for. |
-| laravel/migrations | `.agents/skills/laravel-migrations/SKILL.md` | Adding or changing a Laravel migration, table, column, index, foreign key, or schema backfill. |
-| laravel/models | `.agents/skills/laravel-models/SKILL.md` | Creating or changing an Eloquent model, or its casts, relationships, scopes, fillable columns, or PHPDoc properties. |
-| laravel/phpstan | `.agents/skills/laravel-phpstan/SKILL.md` | Adding or running PHPStan or Larastan in a Laravel application, or when PHPStan reports an error. |
-| laravel/requests | `.agents/skills/laravel-requests/SKILL.md` | Adding or changing a Laravel FormRequest, validation rules, request authorization, or query parameters such as filters, sorting, and pagination. |
-| laravel/security | `.agents/skills/laravel-security/SKILL.md` | Adding or reviewing Laravel authorization, policies, authentication, API tokens, CORS, CSRF exceptions, file uploads, raw queries, HTML output, rate limits, or production configuration, or before deploying a Laravel application. |
-| laravel/tests | `.agents/skills/laravel-tests/SKILL.md` | Writing, choosing, or running tests for a Laravel application, including Pest unit, feature, action, HTTP, and browser tests, or deciding which tests a change needs. |
+| laravel/actions | `laravel/actions/SKILL.md` | Creating, refactoring, or reviewing a Laravel action or operation service that queries, writes, or makes a business decision. |
+| laravel/api-responses | `laravel/api-responses/SKILL.md` | Adding or changing a Laravel JSON API endpoint, its response envelope or pagination output, or how API errors such as 401, 403, 404, 422, 429, and 500 are rendered. |
+| laravel/architecture | `laravel/architecture/SKILL.md` | Placing new Laravel behaviour, naming a new class, planning a feature or refactor, or reviewing where queries, validation, authorization, and responses belong. |
+| laravel/controllers | `laravel/controllers/SKILL.md` | Adding or changing Laravel controllers or routes, wiring a FormRequest and action to an endpoint, or choosing between an API response, Inertia page, and redirect. |
+| laravel/data | `laravel/data/SKILL.md` | Creating or changing Laravel input Data classes, output Resources, or the frontend-facing representation of a model, including partial updates. |
+| laravel/eloquent-strictness | `laravel/eloquent-strictness/SKILL.md` | Enabling Eloquent strict mode, or when fixing a lazy-loading, missing-attribute, or discarded-attribute violation or an N+1 query. |
+| laravel/enums | `laravel/enums/SKILL.md` | Adding or changing a PHP enum used by a Laravel model, or its stored values, labels, validation, or select options. |
+| laravel/frontend | `laravel/frontend/SKILL.md` | Adding or changing React or Inertia pages, page props, Wayfinder routes, forms, or shared UI in a Laravel application's resources/js. |
+| laravel/insights | `laravel/insights/SKILL.md` | Adding or running PHP Insights in a Laravel application, or when Insights reports a finding. |
+| laravel/jobs | `laravel/jobs/SKILL.md` | Adding or reviewing Laravel queued jobs, listeners, or background work such as exports, reports, webhooks, imports, and notifications, or when a request is slow because it does work the user doesn't need to wait for. |
+| laravel/migrations | `laravel/migrations/SKILL.md` | Adding or changing a Laravel migration, table, column, index, foreign key, or schema backfill. |
+| laravel/models | `laravel/models/SKILL.md` | Creating or changing an Eloquent model, or its casts, relationships, scopes, fillable columns, or PHPDoc properties. |
+| laravel/phpstan | `laravel/phpstan/SKILL.md` | Adding or running PHPStan or Larastan in a Laravel application, or when PHPStan reports an error. |
+| laravel/requests | `laravel/requests/SKILL.md` | Adding or changing a Laravel FormRequest, validation rules, request authorization, or query parameters such as filters, sorting, and pagination. |
+| laravel/security | `laravel/security/SKILL.md` | Adding or reviewing Laravel authorization, policies, authentication, API tokens, CORS, CSRF exceptions, file uploads, raw queries, HTML output, rate limits, or production configuration, or before deploying a Laravel application. |
+| laravel/tests | `laravel/tests/SKILL.md` | Writing, choosing, or running tests for a Laravel application, including Pest unit, feature, action, HTTP, and browser tests, or deciding which tests a change needs. |
 
 ## Nest
 
@@ -75,6 +75,30 @@ NestJS conventions for Prisma and Zod, with the file layout domain-driver genera
 | nest/migrations | `nest/migrations/SKILL.md` | Changing Prisma models or constraints, writing backfills, or running migrations locally, in CI, or in production. |
 | nest/security | `nest/security/SKILL.md` | Adding or reviewing auth and permission guards, public routes, ownership and tenant scoping, rate limits, CORS and helmet, JWT and refresh tokens, passwords, or secrets. |
 | nest/tests | `nest/tests/SKILL.md` | Writing or running unit and e2e tests, using an isolated Prisma test database, overriding providers, or deciding which tests a change needs. |
+
+## TypeScript
+
+Language rules for any TypeScript package. Combine with the stack skills for the code in scope.
+
+| Skill id | Canonical path | Use when |
+|---|---|---|
+| typescript/best-practices | `typescript/best-practices/SKILL.md` | Reading, writing, or reviewing any .ts or .tsx file: discriminated unions, branded ids, parsing external data at the boundary, removing `as` casts and `any`, exhaustive switches. |
+
+## Planning
+
+Turning a loose idea into decisions with the person who owns it, before a spec exists.
+
+| Skill id | Canonical path | Use when |
+|---|---|---|
+| planning/grilling | `planning/grilling/SKILL.md` | Sharpening a loose idea, plan, feature request or design with its owner in rounds of questions, each with a recommended answer, until no decision is left assumed. |
+
+## Brand
+
+A product's identity: colour systems composed from the [brand-colours](https://github.com/IsaacHatilima/brand-colours) library, typography, logo and voice.
+
+| Skill id | Canonical path | Use when |
+|---|---|---|
+| brand/identity | `brand/identity/SKILL.md` | Creating or applying a brand: composing its colour system and guidelines from the colour library (for example around green, red and gray), theming the vite-dashboard starter or any stack, typography, logo and app icons, BRAND.md, or reviewing UI for off-brand colours, raw hex values, contrast, or logo misuse. |
 
 ## Frontend
 
@@ -94,6 +118,8 @@ Stack-agnostic skills for writing and reviewing any change. Combine them with th
 |---|---|---|
 | quality/simplicity | `quality/simplicity/SKILL.md` | Writing, refactoring, or reviewing code that should be easy for the next developer to read. |
 | quality/review | `quality/review/SKILL.md` | Reviewing a diff, branch, or pull request and deciding what blocks the merge. |
-| quality/security-review | `quality/security-review/SKILL.md` | Reviewing a change for security problems and deciding which ones block the merge. |
+| quality/deslop | `quality/deslop/SKILL.md` | Finishing or reviewing a branch for AI-generated slop: narrating comments, defensive code on trusted paths, casts that silence the compiler, needless nesting, leftovers, and style that doesn't match the surrounding code. |
+| quality/thermo-nuclear-review | `quality/thermo-nuclear-review/SKILL.md` | Holding a change to an extremely strict maintainability bar: code-judo simplifications, files past 1,000 lines, spaghetti branching, wrong-layer logic, casts and optionality. |
+| quality/security-review | `quality/security-review/SKILL.md` | Reviewing a change for security problems and deciding which ones block the merge, with attack-class checklists for web, client, data isolation, messaging, LLM, mobile, resource, supply-chain and cloud surfaces. |
 
-Other skill groups are archived under `archive/skills/` and are not part of the library. Restore a group to `skills/` and register it here before a workflow selects it.
+Register a new group here, with its canonical paths, before a workflow selects it.

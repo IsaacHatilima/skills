@@ -1,0 +1,27 @@
+{
+  "basic": {
+    "description": "The factory plus the skills every project uses: planning, code quality and review, TypeScript, and brand identity",
+    "workflows": ["factory"],
+    "skills": ["planning/*", "quality/*", "typescript/*", "brand/*"]
+  },
+  "web": {
+    "description": "Web apps (Vite, Next.js, TanStack Start): basic plus the frontend skills and domain-driver",
+    "include": ["basic"],
+    "skills": ["frontend/*", "next/*", "tanstack-start/*", "javascript/*"]
+  },
+  "laravel": {
+    "description": "Laravel apps: basic plus the Laravel skills and the frontend skills for their React or Inertia pages",
+    "include": ["basic"],
+    "skills": ["laravel/*", "frontend/*"]
+  },
+  "api": {
+    "description": "Node APIs: basic plus NestJS and the domain-driver CLI",
+    "include": ["basic"],
+    "skills": ["nest/*", "javascript/*"]
+  },
+  "all": {
+    "description": "Every skill and workflow in this repository",
+    "workflows": ["*"],
+    "skills": ["*"]
+  }
+}

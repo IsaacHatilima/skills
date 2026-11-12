@@ -1,5 +1,5 @@
 interface:
   display_name: "factory"
-  short_description: "Build features with stack skills, reviews and approval"
+  short_description: "Build GitHub issues into reviewed, documented PRs"
 policy:
   allow_implicit_invocation: false

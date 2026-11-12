@@ -21,7 +21,7 @@ Choose each presentation from the data, not from the component you reached for f
 | Events ordered in time: history, audit log, activity, approvals | A timeline, not a table, in a side panel or a second column beside the main table |
 | Records whose volume over time users track: incidents, sign-ups, orders | A summary chart of counts over time above the table, with the total |
 
-- Colour comes from the data: status, severity, category, urgency. Keep chrome such as headers, tabs, and borders neutral. Pair every colour with text or an icon.
+- Colour comes from the data: status, severity, category, urgency. Use the brand's tokens for it (`success`, `warning`, `destructive`, `info`, and `chart-1` to `chart-5` for series; see `brand/identity`), never hand-picked hex. Keep chrome such as headers, tabs, and borders neutral. Pair every colour with text or an icon.
 - A dashboard list shows the records that need action, not the newest ones, because new records rarely need anything.
 - KPI tiles are equal siblings with one value size, each linking to its list. Show a delta only from real comparison data; never invent one.
 
