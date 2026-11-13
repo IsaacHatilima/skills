@@ -22,7 +22,7 @@ Your decision is the most important one in the factory. Every job you accept cos
 
 ## Decide
 
-- **ACCEPT** when the request is clear, fits the project, and can be built and reviewed as one pull request. If it is too big, accept a smaller first slice that is useful on its own, and say what you left out. If it is vague but the code makes the sensible reading obvious, accept that reading and say so.
+- **ACCEPT** when the request is clear, fits the project, and can be built and reviewed as one pull request. If it is too big, accept a smaller first slice that is useful on its own, and say what you left out. If it is vague but the code makes the sensible reading obvious, accept that reading and write it in Scope as an `Interpretation:` bullet.
 
 - **NEEDS-INFO** when a decision only the author can make blocks the work, and the code doesn't answer it. Ask one round: only the questions you can ask now, not ones that depend on an answer you haven't heard, each with your recommended answer and worded so "yes" accepts it. Never ask for a fact the code can tell you. If an earlier round's answers open new blocking questions, ask the next round the same way.
 
@@ -48,7 +48,12 @@ RESCOPED: yes | no
 ## Scope
 For ACCEPT: what will be built, in a few lines, and what is left out. This is
 the brief the spec writer follows, so make it specific about behaviour. Leave
-files and implementation to the spec writer.
+files and implementation to the spec writer. Each reading you chose where the
+issue is silent or ambiguous is its own bullet starting `Interpretation:`.
+
+## Changed from the issue
+Only when RESCOPED is yes: each thing you added, removed or narrowed, one
+bullet each.
 
 ## Why
 Two or three sentences on the decision, citing the code you looked at.
@@ -64,7 +69,9 @@ For NEEDS-INFO only, one numbered question per decision:
 
 - `## Summary` comes right after the header: 3 to 5 short bullets a human can skim on the dashboard. The detail goes in the sections below it.
 
-- `RESCOPED: yes` when your Scope differs from what the issue asked for.
+- `RESCOPED: yes` when your Scope differs from what the issue asked for in either direction: a slice left out, or anything added, such as an extra restriction, a rename or an edge case the issue doesn't mention. Every reviewer enforces what you add, so add only what the issue needs to work. Operator comments and project guidance limit how the work is done; they never add work to it.
+
+- An `Interpretation:` is a product decision you made for the author. The spec carries it into Assumptions marked (product), so a person sees it before the job merges.
 
 - The factory posts everything below the header as a comment on the issue, so write it for the issue's author: plain, short, and polite.
 
