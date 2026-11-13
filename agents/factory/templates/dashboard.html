@@ -373,6 +373,13 @@ function elapsed(job) {
   return min >= 60 ? `${Math.floor(min / 60)}h${String(min % 60).padStart(2, '0')}m` : `${min}m`
 }
 
+function tokens(n) {
+  const count = Number(n ?? 0)
+  if (count >= 1e6) return `${(count / 1e6).toFixed(1)}M tokens`
+  if (count >= 1e3) return `${Math.round(count / 1e3)}k tokens`
+  return `${count} tokens`
+}
+
 // The example jobs keep their issue and PR numbers but have no URLs.
 const link = (url, text) =>
   url ? `<a href="${esc(url)}" target="_blank" rel="noopener">${text}</a>` : `<span>${text}</span>`
@@ -395,7 +402,7 @@ function card(job, rounds) {
   const meta = [
     risk ? `<span class="risk-${esc(risk)}">${esc(risk)}</span>` : '',
     job.doc ? `<span class="doc-${esc(job.doc.split(' ')[0])}">docs: ${esc(job.doc.toLowerCase())}</span>` : '',
-    `<span>$${Number(job.cost_usd).toFixed(2)}</span>`,
+    `<span>$${Number(job.cost_usd).toFixed(2)} · ${tokens(job.tokens)}</span>`,
     `<span>${elapsed(job)}</span>`,
   ].join('')
   return `
@@ -440,7 +447,8 @@ async function render() {
   }
   const running = jobs.filter((j) => LIVE.has(j.stage)).length
   const cost = jobs.reduce((sum, j) => sum + Number(j.cost_usd), 0)
-  $('totals').textContent = `${running} running · $${cost.toFixed(2)} API-equivalent`
+  const used = jobs.reduce((sum, j) => sum + Number(j.tokens ?? 0), 0)
+  $('totals').textContent = `${running} running · $${cost.toFixed(2)} API-equivalent · ${tokens(used)}`
 }
 
 async function poll() {
@@ -513,7 +521,7 @@ const firstLines = new Map()
 async function refreshDrawer() {
   const job = jobs.find((j) => j.id === openJobId)
   if (!job) return
-  $('d-num').textContent = `${job.id} · ${job.stage}${job.round ? ` · round ${job.round}` : ''} · $${Number(job.cost_usd).toFixed(2)} · ${elapsed(job)}`
+  $('d-num').textContent = `${job.id} · ${job.stage}${job.round ? ` · round ${job.round}` : ''} · $${Number(job.cost_usd).toFixed(2)} · ${tokens(job.tokens)} · ${elapsed(job)}`
   $('d-title').textContent = job.title
   $('d-links').innerHTML = links(job)
 

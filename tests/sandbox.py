@@ -42,6 +42,7 @@ class Sandbox:
             "HOME": str(self.tmp / "home"),
             "FAKE_GH_STATE": str(self.state_file),
             "CLAUDE_CONFIG_DIR": str(self.tmp / "claude"),
+            "CODEX_HOME": str(self.tmp / "codex"),
             "GIT_CONFIG_GLOBAL": str(gitconfig),
             "GIT_CONFIG_NOSYSTEM": "1",
         }

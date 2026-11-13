@@ -29,7 +29,7 @@ skills/
   catalog.md               shared capability index
   laravel/                 actions, controllers, data, models, requests, tests, ... (Laravel 13)
   nest/                    actions, controllers, dtos, database, migrations, ...
-  next/                    actions
+  next/                    actions, database
   tanstack-start/          actions
   frontend/                app-shell, overlays, data-display
   quality/                 simplicity, review, thermo-nuclear-review, deslop, security-review
@@ -56,9 +56,9 @@ The [catalog](skills/catalog.md) lists reusable capabilities and path-resolution
 | Location | Capabilities |
 |---|---|
 | `skills/laravel/` | Laravel 13 conventions: [actions](skills/laravel/actions/SKILL.md), [api-responses](skills/laravel/api-responses/SKILL.md), [architecture](skills/laravel/architecture/SKILL.md), [controllers](skills/laravel/controllers/SKILL.md), [data](skills/laravel/data/SKILL.md), [eloquent-strictness](skills/laravel/eloquent-strictness/SKILL.md), [enums](skills/laravel/enums/SKILL.md), [frontend](skills/laravel/frontend/SKILL.md), [insights](skills/laravel/insights/SKILL.md), [jobs](skills/laravel/jobs/SKILL.md), [migrations](skills/laravel/migrations/SKILL.md), [models](skills/laravel/models/SKILL.md), [phpstan](skills/laravel/phpstan/SKILL.md), [requests](skills/laravel/requests/SKILL.md), [security](skills/laravel/security/SKILL.md), [tests](skills/laravel/tests/SKILL.md) |
-| `skills/nest/` | NestJS conventions for Prisma and Zod: [actions](skills/nest/actions/SKILL.md), [api-responses](skills/nest/api-responses/SKILL.md), [architecture](skills/nest/architecture/SKILL.md), [controllers](skills/nest/controllers/SKILL.md), [database](skills/nest/database/SKILL.md), [dtos](skills/nest/dtos/SKILL.md), [jobs](skills/nest/jobs/SKILL.md), [migrations](skills/nest/migrations/SKILL.md), [security](skills/nest/security/SKILL.md), [tests](skills/nest/tests/SKILL.md) |
+| `skills/nest/` | NestJS conventions for Drizzle (or an existing Prisma setup) and Zod: [actions](skills/nest/actions/SKILL.md), [api-responses](skills/nest/api-responses/SKILL.md), [architecture](skills/nest/architecture/SKILL.md), [controllers](skills/nest/controllers/SKILL.md), [database](skills/nest/database/SKILL.md), [dtos](skills/nest/dtos/SKILL.md), [jobs](skills/nest/jobs/SKILL.md), [migrations](skills/nest/migrations/SKILL.md), [security](skills/nest/security/SKILL.md), [tests](skills/nest/tests/SKILL.md) |
 | `skills/javascript/` | [domain-driver CLI](skills/javascript/domain-driver/SKILL.md) |
-| `skills/next/` | [Next actions](skills/next/actions/SKILL.md) |
+| `skills/next/` | [actions](skills/next/actions/SKILL.md), [database](skills/next/database/SKILL.md) (Drizzle, or an existing Prisma setup) |
 | `skills/tanstack-start/` | [TanStack Start actions](skills/tanstack-start/actions/SKILL.md) |
 | `skills/frontend/` | Stack-agnostic: [app-shell](skills/frontend/app-shell/SKILL.md), [overlays](skills/frontend/overlays/SKILL.md), [data-display](skills/frontend/data-display/SKILL.md) |
 | `skills/quality/` | Stack-agnostic: [simplicity](skills/quality/simplicity/SKILL.md), [review](skills/quality/review/SKILL.md), [thermo-nuclear-review](skills/quality/thermo-nuclear-review/SKILL.md) and [deslop](skills/quality/deslop/SKILL.md) (from Cursor), [security-review](skills/quality/security-review/SKILL.md) (with Cloudflare's attack-class checklists) |
@@ -108,7 +108,8 @@ Existing files that differ are left alone unless you pass `--force`. Pull this r
 - **Start a new session.** Claude Code and Codex read `CLAUDE.md`, `AGENTS.md`, agents and commands when a session starts, so an open session won't see the install.
 - **Skills need nothing else.** Agents read the block in the instruction files and open the skill a task needs.
 - **The factory needs `/factory setup` once per project**, run from either tool. The project must be on GitHub with `gh` signed in. Setup writes `factory/config.json`, `factory/checks.sh` and the dashboard, creates the labels, adds a factory section to `AGENTS.md`, checks that `checks.sh` passes, and commits. Push that commit before the first `/factory run`, because jobs branch from `origin/<base>`.
-- **Claude Code and Codex share it.** One install covers both, and setup's files serve both. Run the factory from one of them at a time per project, because two orchestrators can pick up the same job. The dashboard's cost counts only Claude Code agents.
+- **The factory's UI and UX reviewers drive a browser.** Unless a project's `AGENTS.md` names another browser workflow, install [agent-browser](https://github.com/vercel-labs/agent-browser) once per machine: `npm install -g agent-browser && agent-browser install`. Without it they can only read the code.
+- **Claude Code and Codex share it.** One install covers both, and setup's files serve both. Run the factory from one of them at a time per project, because two orchestrators can pick up the same job. The dashboard counts both tools' subagents: tokens always, and dollars for models listed in `prices_usd_per_mtok` in `factory/config.json`. Add your Codex models' prices there to see their cost.
 - **Worktrees see only what their branch has.** A project install exists only on branches that contain its commit, so a thread working in another worktree won't find it. When you work in many worktrees, as T3 Code does, install for your account instead.
 
 ## Brand colours

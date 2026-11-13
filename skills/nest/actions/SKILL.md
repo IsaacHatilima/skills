@@ -23,14 +23,14 @@ An action is one business operation in its own class. domain-driver generates it
 
 ## Persistence and transactions
 
-- Repositories run the queries (see `database`); the action makes the decisions.
-- The action owns the transaction. When it writes more than once, it opens `this.prisma.$transaction(async (tx) => …)` once and passes `tx` to every repository call inside. Repositories and nested actions never open their own. A project that uses `@Transactional()` from `@nestjs-cls/transactional` keeps it.
-- Hash passwords and call external services before the transaction opens.
-- Jobs, events, and mail that depend on the write start after `$transaction` resolves, never inside the callback (see `jobs`).
+- Repositories run the queries and own transactions (see `database`); the action makes the decisions. An action never touches the database client, a schema table, or a transaction.
+- An action calls one flow repository for its write. When the write spans several statements, such as a project and its owner membership, that repository commits them together in one method. The action may also read through shared repositories directly; don't add forwarding methods to hide them.
+- Hash passwords and call external services before calling the repository that writes.
+- Jobs, events, and mail that depend on the write start after that call returns, once the write has committed (see `jobs`). When losing them is unacceptable, the repository writes an outbox row in the same transaction instead.
 
 ## Results and failures
 
-- Return what the caller needs, typed: usually the output DTO mapped from the Prisma result (see `dtos`). Deletes return `void`, and checks return `boolean`. Never return a Prisma row.
+- Return what the caller needs, typed: usually the output type the repository mapped (see `dtos`). Deletes return `void`, and checks return `boolean`. Never return a database row.
 - Broken business rules throw the project's coded error, such as `notFound('Project')` when a scoped lookup returns `null`. The exception filter renders it (see `api-responses`).
 
 ## Example
@@ -39,28 +39,22 @@ An action is one business operation in its own class. domain-driver generates it
 @Injectable()
 export class CreateProjectService {
   constructor(
-    private readonly prisma: PrismaService,
     private readonly createProject: CreateProjectRepository,
-    private readonly addMember: AddProjectMemberRepository,
     @InjectQueue('projects') private readonly queue: Queue,
   ) {}
 
   async handle(actor: AuthPrincipal, data: CreateProject): Promise<Project> {
-    const project = await this.prisma.$transaction(async (tx) => {
-      const created = await this.createProject.handle({ name: data.name, ownerId: actor.userId }, tx);
-      await this.addMember.handle({ projectId: created.id, userId: actor.userId, role: 'owner' }, tx);
-      return created;
-    });
+    const project = await this.createProject.handle({ name: data.name, ownerId: actor.userId });
 
     await this.queue.add('index', { projectId: project.id }, { jobId: `index-${project.id}` });
 
-    return toProject(project);
+    return project;
   }
 }
 ```
 
-The project and its owner membership commit together, and the job is queued only after the commit.
+`CreateProjectRepository.handle()` inserts the project and its owner membership in one transaction and returns the mapped `Project`. The job is queued only after that commit.
 
 ## Verify
 
-Unit tests fake the repositories, `$transaction`, and the queue, and cover each branch and error. E2e tests prove the writes commit and roll back together (see `tests`).
+Unit tests fake the repositories and the queue, and cover each branch and error. E2e tests prove the writes commit and roll back together (see `tests`).

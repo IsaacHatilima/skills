@@ -1,6 +1,6 @@
 ---
 name: api-responses
-description: Use when adding or changing a NestJS JSON response shape, the success envelope or its interceptor, the exception filter, error codes, paginated list output, or how validation, auth, rate-limit, Prisma, and unexpected errors reach the client.
+description: Use when adding or changing a NestJS JSON response shape, the success envelope or its interceptor, the exception filter, error codes, paginated list output, or how validation, auth, rate-limit, database, and unexpected errors reach the client.
 ---
 
 # API responses
@@ -28,28 +28,26 @@ Every JSON body has exactly these three keys:
   - coded errors to their status and `code`;
   - nestjs-zod's `ZodValidationException` to 400 `VALIDATION_ERROR`, with `details` from `getZodError().issues`;
   - `ThrottlerException` to 429, and other `HttpException`s to their status with a generic code;
-  - Prisma's known errors: `P2002` and `P2003` to 409, `P2025` to 404;
+  - database errors a repository didn't translate: SQLSTATE `23505` (unique) and `23503` (foreign key) to 409, read with the helper from `database` (on Prisma, `P2002` and `P2003` to 409 and `P2025` to 404);
   - anything else to 500 `INTERNAL_ERROR`.
-- Repositories turn expected Prisma errors into specific codes, such as `EMAIL_ALREADY_REGISTERED` (see `database`). The filter's Prisma mapping only catches the rest.
+- Repositories turn expected database errors into specific codes, such as `EMAIL_ALREADY_REGISTERED` (see `database`). The filter's database mapping only catches the rest.
 - 5xx bodies carry a generic message, never exception text, SQL, stack traces, or file paths. Log the route template, status, code, and error type server-side, never the body or parameters.
 - Streams and file downloads skip the envelope.
 - Document each route's data schema and error codes with the project's OpenAPI decorator.
 
 ## Example
 
-The Prisma branch of the filter's `render()`, after the coded, validation, throttling, and `HttpException` branches:
+The database branch of the filter's `render()`, after the coded, validation, throttling, and `HttpException` branches:
 
 ```ts
-const PRISMA_ERRORS: Partial<Record<string, [HttpStatus, ErrorCode, string]>> = {
-  P2002: [HttpStatus.CONFLICT, ErrorCode.CONFLICT, 'The record already exists'],
-  P2003: [HttpStatus.CONFLICT, ErrorCode.CONFLICT, 'A related record is missing or still in use'],
-  P2025: [HttpStatus.NOT_FOUND, ErrorCode.NOT_FOUND, 'Record not found'],
+const DATABASE_ERRORS: Partial<Record<string, [HttpStatus, ErrorCode, string]>> = {
+  '23505': [HttpStatus.CONFLICT, ErrorCode.CONFLICT, 'The record already exists'],
+  '23503': [HttpStatus.CONFLICT, ErrorCode.CONFLICT, 'A related record is missing or still in use'],
 };
 
-if (exception instanceof Prisma.PrismaClientKnownRequestError) {
-  const known = PRISMA_ERRORS[exception.code];
-  if (known) return { status: known[0], body: errorEnvelope(known[1], known[2]) };
-}
+const sqlState = pgCodeOf(exception);
+const known = sqlState === undefined ? undefined : DATABASE_ERRORS[sqlState];
+if (known) return { status: known[0], body: errorEnvelope(known[1], known[2]) };
 return { status: HttpStatus.INTERNAL_SERVER_ERROR, body: errorEnvelope(ErrorCode.INTERNAL_ERROR, 'Internal server error') };
 ```
 

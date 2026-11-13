@@ -61,7 +61,7 @@ Place each action by frequency and importance: a labelled button (primary create
 
 ## Mobile
 
-- Under 768px, dialogs and popovers become bottom sheets, and drawers and long forms go full screen, because floating panels have no room there.
+- Under 768px, dialogs and popovers become bottom sheets, and drawers and long forms go full screen, because floating panels have no room there. In vite-dashboard-starter, build these dialogs from `ResponsiveDialog` (`src/components/ui/responsive-dialog.tsx`): its parts render a centered `Dialog` from 768px up and a `Drawer` that swipes down below it, so the content is written once. A copy of the starter that predates it has only the centered `Dialog`; there, switch on `useIsMobile()` (`src/hooks/use-mobile.ts`) and render the same content in `Drawer` with `swipeDirection="down"` under 768px.
 - Sheets keep a close button, swipe down to dismiss, and close on Back.
 - Touch has no hover, so anything revealed on hover also lives in a menu.
 

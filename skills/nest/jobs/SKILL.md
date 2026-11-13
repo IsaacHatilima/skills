@@ -17,7 +17,7 @@ Applies to: `src/**/*.processor.ts`, and `BullModule` registration in modules. P
 - Queue slow or external work the response doesn't depend on: mail, exports, imports, outbound webhooks, and third-party calls.
 - A processor is a transport like a controller. A `@Processor('projects')` class extends `WorkerHost`, validates `job.data` with a Zod schema in `process()`, and calls one action, which owns the queries and the transaction (see `actions`).
 - Enqueue after the transaction resolves, never inside the callback. When losing a job after the commit is unacceptable, write an outbox row in the same transaction and relay it to the queue.
-- Payloads carry ids and small values. Redis stores them in plain text, so never put Prisma rows, secrets, tokens, or personal data in them.
+- Payloads carry ids and small values. Redis stores them in plain text, so never put database rows, secrets, tokens, or personal data in them.
 - Make the work idempotent: a retry must not charge, send, or insert twice. Give each job a deterministic `jobId` (it can't contain `:`), and have the action check for the state it is meant to produce.
 - Bound retries with `attempts` and `backoff: { type: 'exponential', delay }`, and set `removeOnComplete` and `removeOnFail`. Throw to retry, or throw `UnrecoverableError` when retrying can't help, such as for an invalid payload.
 - Log failures in an `@OnWorkerEvent('failed')` handler with the job id and name, never the payload.

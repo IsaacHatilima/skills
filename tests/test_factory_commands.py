@@ -37,11 +37,58 @@ class CommandsTest(unittest.TestCase):
         # 1M input $4 + 0.1M output $2 + 1M cache read $0.20 + 1M 5m cache write $5, counted once per message id.
         self.assertEqual(self.s.job_json(job_id)["cost_usd"], 11.2)
 
+    def rollout(self, name, mentions, *, cwd=None, parent="orchestrator", model="gpt-test"):
+        """A Codex session log; `mentions` maps job ids to how often its commands name their folders."""
+        day = self.s.job_json(next(iter(mentions)))["started"][:10].replace("-", "/")
+        path = self.s.tmp / "codex" / "sessions" / day / f"rollout-{name}.jsonl"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        meta = {"id": name, "cwd": str(cwd or self.s.repo), **({"parent_thread_id": parent} if parent else {})}
+        lines = [{"type": "session_meta", "payload": meta},
+                 {"type": "turn_context", "payload": {"model": model}},
+                 {"type": "response_item", "payload": {"type": "agent_message",
+                                                       "content": [{"type": "encrypted_content"}]}}]
+        for job_id, count in mentions.items():
+            folder = f"{self.s.repo}/factory/jobs/{job_id}/"
+            lines += [{"type": "response_item", "payload": {"type": "function_call", "arguments": f"cat {folder}spec.md"}}
+                      ] * count
+        total = {"input_tokens": 1_000_000, "cached_input_tokens": 600_000, "output_tokens": 100_000,
+                 "total_tokens": 1_100_000}
+        lines += [{"type": "event_msg", "payload": {"type": "token_count", "info": {"total_token_usage": {
+                      "input_tokens": 10, "cached_input_tokens": 0, "output_tokens": 1, "total_tokens": 11}}}},
+                  {"type": "event_msg", "payload": {"type": "token_count", "info": None}},
+                  {"type": "event_msg", "payload": {"type": "token_count", "info": {"total_token_usage": total}}}]
+        path.write_text("\n".join(json.dumps(line) for line in lines) + "\n")
+
+    def test_cost_counts_codex_subagents_by_the_job_folder_they_work_in(self):
+        s = self.s
+        job_id = s.start_job()
+        s.add_issue(13, "Add multiply", ["factory"])
+        other = s.job("create", "13").stdout.strip()
+        path = s.repo / "factory" / "config.json"
+        config = json.loads(path.read_text())
+        config["prices_usd_per_mtok"]["gpt-test"] = {"input": 2.0, "output": 10.0, "cache_read": 0.5}
+        path.write_text(json.dumps(config))
+        self.rollout("builder", {job_id: 2})
+        self.rollout("unpriced", {job_id: 2}, model="gpt-unknown")
+        self.rollout("orchestrator", {job_id: 2}, parent=None)
+        self.rollout("another-repo", {job_id: 2}, cwd=s.tmp / "another-repo")
+        # A sibling checkout whose path starts with this one's, with a job of the same id.
+        self.rollout("sibling-repo", {job_id: 2}, cwd=f"{s.repo}-2")
+        self.rollout("mostly-the-other-job", {job_id: 1, other: 3})
+        s.job("sync", job_id)
+        s.job("sync", other)
+        # A priced session: 0.4M uncached input $0.80 + 0.6M cached $0.30 + 0.1M output $1.00 = $2.10.
+        # Unpriced models add tokens but no dollars; orchestrators and other repositories, even
+        # one whose path starts with this one's, don't count.
+        self.assertEqual((s.job_json(job_id)["cost_usd"], s.job_json(job_id)["tokens"]), (2.1, 2_200_000))
+        self.assertEqual((s.job_json(other)["cost_usd"], s.job_json(other)["tokens"]), (2.1, 1_100_000))
+        self.assertRegex(s.job("summary", job_id).stdout, rf"{job_id}.*\$2\.10\s+2\.2M")
+
     def test_summary_lists_stage_docs_and_cost(self):
         job_id = self.s.start_job()
         out = self.s.job("summary").stdout
-        self.assertRegex(out, r"job\s+issue\s+stage\s+round\s+pr\s+docs\s+cost\s+time")
-        self.assertRegex(out, rf"{job_id}\s+#12\s+build\s+1\s+-\s+-\s+\$0\.00")
+        self.assertRegex(out, r"job\s+issue\s+stage\s+round\s+pr\s+docs\s+cost\s+tokens\s+time")
+        self.assertRegex(out, rf"{job_id}\s+#12\s+build\s+1\s+-\s+-\s+\$0\.00\s+0")
         self.assertIn("total $0.00", out)
 
     def test_reject_closes_the_pr_and_clears_labels(self):

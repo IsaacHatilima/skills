@@ -65,13 +65,13 @@ A job has at most `max_rounds` build rounds (`config.json`); a round is one buil
 Every agent's model, reasoning effort and tools are set in its own definition. Never pass a model, and never pick one yourself.
 
 - **Claude Code**: the agents are in `.claude/agents/` (the project's or the user's). Start each with the Agent tool, `subagent_type` set to its name, in the background. You're notified when one finishes; advance that job then. While agents run, don't poll and don't wait: end your turn with a one-line status.
-- **Codex**: the agents are in `.codex/agents/` (the project's or the user's). Spawn each as the custom agent of that name. Codex doesn't wake you after your turn ends, so stay in the turn: once agents are running, wait for the next one to finish, advance its job, and repeat until nothing is running.
+- **Codex**: the agents are in `.codex/agents/` (the project's or the user's). Spawn each as the custom agent of that name. Codex doesn't wake you after your turn ends, so stay in the turn: once agents are running, wait for the next one to finish, advance its job, and repeat until nothing is running. Codex caps how many agents run at once. When your tools can close an agent, close it once its step is done, except a builder you'll resume. If a spawn is refused for the limit, start the rest as others finish, and still wait for all of a round's reviewers.
 
 If your tool can't start subagents, stop and tell the user. The factory depends on separate agents checking each other's work, and one session playing every role defeats that.
 
 Agents take their context from files, never from this conversation. Every prompt starts with the job's header, which `<bin>/job header <id>` prints; `<bin>/job header <id> builder`, `... ux` and `... ui` add that agent's port. Paste the header exactly as printed: the job's cost is found by its `Job folder:` text. `<header>` below means that line, and `<header for builder>` (or `ux`, `ui`) the line with that agent's port.
 
-Name the builder `builder-<id>`. Resume it for a later round when this session started it and it's still available: in Claude Code, `SendMessage` to that name; in Codex, send the follow-up to its thread. Otherwise start a new `builder` and tell it it's resuming. Start every message to it with `<header>` too.
+Name the builder `builder-<id>`; where agent names allow only letters, digits and underscores, as in Codex, use `builder_<id>` with its hyphens as underscores. Resume it for a later round when this session started it and it's still available: in Claude Code, `SendMessage` to that name; in Codex, send the follow-up to its thread. Otherwise start a new `builder` and tell it it's resuming. Start every message to it with `<header>` too.
 
 ## Advancing a job
 
@@ -198,7 +198,7 @@ Settled with the user before the factory started.
 
 Prepare the project the session is in. Work in the main checkout and stay on the branch the user is on.
 
-1. **Check.** Stop and tell the user if any of these fail: it's a git repository with an `origin` on GitHub; `gh auth status` shows a user who can push to it and manage its labels; its default branch (`gh repo view --json defaultBranchRef`) exists on `origin`; `python3 --version` is 3.10 or later; the factory's agents are installed for this tool (`.claude/agents/builder.md` or `.codex/agents/builder.toml`, in the project or the user's home).
+1. **Check.** Stop and tell the user if any of these fail: it's a git repository with an `origin` on GitHub; `gh auth status` shows a user who can push to it and manage its labels; its default branch (`gh repo view --json defaultBranchRef`) exists on `origin`; `python3 --version` is 3.10 or later; the factory's agents are installed for this tool (`.claude/agents/builder.md` or `.codex/agents/builder.toml`, in the project or the user's home). When the project has a UI, also check that the UI and UX reviewers can drive a browser: a browser workflow named in `AGENTS.md`, or `agent-browser --version`. If neither works, don't stop; tell the user those reviewers can only read code until they install it (`npm install -g agent-browser && agent-browser install`).
 
 2. **Init.** Run `<bin>/job init`. It writes `factory/config.json`, `factory/checks.sh` and `factory/dashboard.html` (never overwriting the first two), adds `/factory/jobs/` and `/.worktrees/` to `.gitignore`, and creates the three labels. It reports a missing skill catalog: the factory needs one, so tell the user to install a skills bundle (`./install basic` in the skills repository) or set `skills.catalog`.
 
@@ -232,7 +232,7 @@ Prepare the project the session is in. Work in the main checkout and stay on the
 
 6. **Verify.** `bash factory/checks.sh` exits 0 in the main checkout; if it fails there, the factory can never pass a job, so fix the script (not the project) or tell the user what's broken. `<bin>/job queue` runs without an error. `python3 -m json.tool factory/config.json` succeeds. `git check-ignore factory/jobs/x .worktrees/x` prints both paths, and `git status --porcelain --untracked-files=all` lists `factory/config.json`, `factory/checks.sh` and `factory/dashboard.html` as committable.
 
-7. **Hand over.** Commit the setup on the current branch with a one-line message and show the user the diff. Ask before pushing: the factory branches every job from `origin/<base_branch>`, so the setup must be on that branch there before the first run. Then tell the user, in a few lines: label one or two small issues `factory` and run `/factory run` (`$factory run` in Codex); every job ends as a PR, the approver merges what it approves and the rest wait labeled `factory:needs-human`; approve one by merging it, or give feedback with `/factory <anything>`; start with `concurrency` 1 and read every PR until they trust it.
+7. **Hand over.** Commit the setup on the current branch with a one-line message and show the user the diff. Ask before pushing: the factory branches every job from `origin/<base_branch>`, so the setup must be on that branch there before the first run. When the base branch refuses direct commits or pushes (a git hook or branch protection), never bypass it: commit on a `factory-setup` branch, push that, and open a pull request for the user to merge before the first run. Then tell the user, in a few lines: label one or two small issues `factory` and run `/factory run` (`$factory run` in Codex); every job ends as a PR, the approver merges what it approves and the rest wait labeled `factory:needs-human`; approve one by merging it, or give feedback with `/factory <anything>`; start with `concurrency` 1 and read every PR until they trust it.
 
 ## Guardrails
 

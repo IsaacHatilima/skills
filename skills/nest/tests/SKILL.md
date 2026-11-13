@@ -1,6 +1,6 @@
 ---
 name: tests
-description: Use when writing, choosing, or running tests for a NestJS application, including unit tests for actions and schemas, e2e tests against an isolated Prisma test database, provider overrides, or deciding which tests a change needs.
+description: Use when writing, choosing, or running tests for a NestJS application, including unit tests for actions and schemas, e2e tests against an isolated test database, provider overrides, or deciding which tests a change needs.
 ---
 
 # Tests
@@ -12,7 +12,7 @@ Use the project's runner and layout. `@nestjs/testing` works with Jest and Vites
 ## Unit tests
 
 - Named `*.spec.ts`, for example under `tests/unit/` mirroring `src/`. They use no database and no network.
-- Build the action with `Test.createTestingModule({ providers: [CreateProjectService, { provide: CreateProjectRepository, useValue: fake }] })` and `module.get()`, so injection tokens are exercised. Fake `$transaction` by calling its callback with a fake client.
+- Build the action with `Test.createTestingModule({ providers: [CreateProjectService, { provide: CreateProjectRepository, useValue: fake }] })` and `module.get()`, so injection tokens are exercised. Actions never touch the database (see `actions`), so faking their repositories is enough.
 - A fake keeps the real contract: the same return shapes, `null` where the real one returns `null`, and the same errors.
 - Schema tests parse the Zod schema directly (see `dtos`).
 - Request-scoped providers need `await module.resolve()`; `module.get()` throws for them.
@@ -21,10 +21,10 @@ Use the project's runner and layout. `@nestjs/testing` works with Jest and Vites
 
 - Named `*.e2e-spec.ts`, one file per flow, such as `tests/feature/projects/create-project.e2e-spec.ts`.
 - Build the app from `AppModule`, call the same HTTP setup function as `main.ts`, then `await app.init()`. Close it in `afterAll`.
-- Override only external boundaries with `.overrideProvider()`: mail, payments, storage, and queues through `getQueueToken('projects')`. Keep actions, repositories, guards, and Prisma real.
+- Override only external boundaries with `.overrideProvider()`: mail, payments, storage, and queues through `getQueueToken('projects')`. Keep actions, repositories, guards, and the database real.
 - Assert the status, envelope, and error `code` (see `api-responses`, `security`).
-- Use a dedicated test database from `.env.test`, never a development or shared one. Global setup applies the real migrations with `prisma migrate deploy`. Truncate every table except `_prisma_migrations` between tests.
-- Run database suites serially, with Jest's `--runInBand` or Vitest's `fileParallelism: false`, because each one truncates the same database.
+- Use a dedicated test database from `.env.test`, never a development or shared one. Global setup applies the real migrations, with `migrate()` from `drizzle-orm/node-postgres/migrator` (or `prisma migrate deploy` on Prisma). Truncate every application table between tests with one `truncate table … cascade`; Drizzle's migration journal lives in the separate `drizzle` schema, and Prisma's `_prisma_migrations` table must be skipped.
+- Run database suites serially, with Jest's `--runInBand` or Vitest's `fileParallelism: false`, because each one truncates the same database. A second checkout of the project, such as a git worktree, runs them against its own database name, never the main checkout's, or the two truncate each other's rows.
 
 ## Running tests
 

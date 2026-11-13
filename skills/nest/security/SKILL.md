@@ -16,7 +16,7 @@ Applies to: `src/security/**`, `src/config/**`, `src/app.module.ts`, `src/main.t
 
 ## Ownership and scoping
 
-- Guards decide what the actor may do. The action's queries decide which records they may touch: every `where` includes the owner or tenant from the actor, such as `{ id, workspaceId: actor.workspaceId }`.
+- Guards decide what the actor may do. The queries decide which records they may touch: the action passes the actor's owner or tenant id to the repository, and every `where` includes it, such as `and(eq(projects.id, id), eq(projects.workspaceId, actor.workspaceId))`.
 - A scoped lookup that finds nothing answers 404, so other tenants' ids stay hidden.
 - Owner, tenant, and role columns are set from the actor, never from input.
 

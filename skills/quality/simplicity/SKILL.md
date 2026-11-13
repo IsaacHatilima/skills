@@ -14,7 +14,7 @@ Simple code does what the task needs, in steps a reader can follow once. Simplif
 - **Build what was asked.** Add an option, input format, or configuration only when the spec or real data needs it. When correctness forces one (a CSV name can contain a comma), add it and say why in your report.
 - **Trust the types.** Validate at the system boundary: request input, files, external APIs. Inside, don't re-check what the signature already guarantees: no `typeof` on a typed parameter, no `?? []` on a non-nullable value, no `instanceof` on a typed argument.
 - **One idea per expression.** Use early returns, `match`/`switch`, or a lookup table instead of nested ternaries. Split a chain that does several things into named steps. Prefer plain string and array calls over a regex with a callback when both work.
-- **No layers that only forward.** A method that just calls another method, an unused parameter, and dead code all go.
+- **No layers that only forward.** A method that just calls another method, an unused parameter, and dead code all go. Layers that project guidance or a stack skill prescribes stay even when one only forwards, such as domain-driver's service between a controller and its repository.
 - **Keep structure that earns its place.** Don't merge separate concerns to save lines, or inline a helper that names a real step. Fewer lines is not the goal.
 - **Names say what things are.** Use `$invoice`, not `$i`; `pendingInvites`, not `data2`. Short names are fine for indexes and tiny lambdas.
 - **Comments explain why.** Delete comments that restate the code. Fix or delete any comment the code contradicts. Never reference temporary states ("for now", "new version").

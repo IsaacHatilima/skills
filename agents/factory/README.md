@@ -101,7 +101,7 @@ Then, in each project, run `/factory setup` (`$factory setup` in Codex) once. It
 cd factory && python3 -m http.server
 ```
 
-Open <http://localhost:8000/dashboard.html>. Each job is a card with its issue and PR, gate and review chips per round, its documentation status, risk, cost and time. Click a card to read every file the job wrote. Cost is the API-equivalent price of the job's Claude Code agents, read from Claude Code's transcripts and priced with `prices_usd_per_mtok`; Codex runs aren't counted.
+Open <http://localhost:8000/dashboard.html>. Each job is a card with its issue and PR, gate and review chips per round, its documentation status, risk, cost and time. Click a card to read every file the job wrote. Cost and tokens cover the job's subagents in both tools, read from Claude Code's transcripts and Codex's session logs. Dollars are API-equivalent for models priced in `prices_usd_per_mtok`; add your Codex models there to count theirs, since unpriced models add tokens only.
 
 ## Cost and safety
 

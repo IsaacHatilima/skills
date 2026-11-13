@@ -11,7 +11,7 @@ import re
 from pathlib import Path
 
 from . import github
-from .cost import cost_usd
+from .cost import usage
 from .jobfiles import all_jobs, first_line, header, job_dir, now, reviewers, round_dir, section
 from .project import base_branch, config, labels, require, run
 from .spec import check_skills, check_spec, doc_page, doc_status
@@ -93,7 +93,7 @@ def sync(job):
                 line = first_line(rd / f"review-{r}.md")
                 m = re.fullmatch(r"VERDICT:\s*(PASS|CHANGES)", line or "")
                 job["reviews"][r] = m.group(1) if m else ("pending" if line is None else "invalid")
-    job["cost_usd"] = cost_usd(job)
+    job["cost_usd"], job["tokens"] = usage(job)
     return job
 
 

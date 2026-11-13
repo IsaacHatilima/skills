@@ -24,7 +24,7 @@ The worktree is a checkout of the job branch in `.worktrees/<job-id>` inside the
 
 4. The change: `git log --oneline <base>..HEAD` and `git diff <base>...HEAD`. Inspect a scaffold commit and the implementation separately; a scaffold commit exists only when the declared strategy actually generated files. Read changed files in full where the diff isn't enough.
 
-5. From round 2 on, your own review from the last round that had reviews (`round-<M>/review-code.md`). Check whether each finding was fixed.
+5. From round 2 on, your own review from the last round that had reviews (`round-<M>/review-code.md`), and `git diff <COMMIT>..HEAD`, where `<COMMIT>` is the `COMMIT:` line of `round-<M>/checks.md`. Check whether each finding was fixed, and judge each fix as new code against the same bar: a fix that swallows an error, special-cases the value you tested or adds an unrequested path is a finding, even when it does what you asked. Code your last review already saw gets a new finding only for a bug or an unmet criterion, with the input that triggers it and its real impact; anything else you notice there goes under Notes.
 
 ## Checks are done
 
@@ -36,7 +36,7 @@ Use `quality/review` for what counts as evidence and how to write each finding. 
 
 - **Correctness**: it does what the requirements, the API or page-prop contract and the acceptance criteria say, including errors, edge cases, awaits, and allowed and refused server cases.
 
-- **Structure**, as `quality/thermo-nuclear-review` defines it: code-judo simplifications that delete branches, helpers or layers; files pushed past 1,000 lines (or the project's own limit); ad-hoc conditionals and special cases bolted onto existing flows; feature logic in shared paths or the wrong layer; thin wrappers; casts, `any` and optionality that hide the real contract; duplicated canonical helpers; needless sequential or non-atomic orchestration.
+- **Structure**, as `quality/thermo-nuclear-review` defines it: code-judo simplifications that delete branches, helpers or layers; files pushed past 1,000 lines (or the project's own limit); ad-hoc conditionals and special cases bolted onto existing flows; feature logic in shared paths or the wrong layer; thin wrappers; casts, `any` and optionality that hide the real contract; duplicated canonical helpers, including action files or hooks that differ in a few tokens and should share one helper; needless sequential or non-atomic orchestration.
 
 - **Slop**, as `quality/deslop` defines it: comments that narrate the change or don't match the file, defensive checks and try/catch on trusted paths, casts and ignores that silence the compiler, needless nesting, debug leftovers and commented-out code, and naming, error handling or logging that differ from the surrounding code.
 
@@ -50,7 +50,7 @@ Use `quality/review` for what counts as evidence and how to write each finding. 
 
 - **Conventions and docs**: the project's style as its guidance and neighbouring code show it, comment density like the neighbouring code, and AGENTS.md and the docs it lists updated where the change requires it.
 
-- **Tests**: new behaviour has tests where the project has a test runner, and no existing test was weakened, skipped, deleted or special-cased to pass.
+- **Tests**: new behaviour has tests where the project has a test runner, and no existing test was weakened, skipped, deleted or special-cased to pass. For every behaviour the spec states, in its contract, requirements or criteria, find the test that exercises it; a case build.md checks off that no test exercises is a finding. So is a test whose name claims a case its body doesn't set up, such as a tie-breaker test whose rows never tie.
 
 - **Commits**: short one-line messages and nothing stray committed. Only the documenter's `docs: document ...` commits may touch `Documentation/`. Trailers and attribution (`Co-Authored-By` and the like) are the builder's, not yours: never compare them with your own session's or ask for commits to be rewritten.
 
@@ -62,18 +62,21 @@ VERDICT: PASS | CHANGES
 ## Summary
 - 3 to 5 short bullets: what happened in this step and why
 
+## Skills
+<each skill id you applied>: read
+
 ## Checks
 <command or criterion>: pass | fail | not run, with scope
 
 ## Findings
-1. <path:line> <the problem, its impact, and the fix you want>
+1. [<skill id, spec criterion, or bug>] <path:line> <the problem, its impact, and the fix you want>
 
 ## Notes
 Non-blocking observations and explicit coverage limits. Optional.
 ```
 
 - The first line must be exactly `VERDICT: PASS` or `VERDICT: CHANGES`.
-- Use CHANGES for bugs, spec gaps, unmet required checks, weakened tests, swallowed errors, introduced complexity with a simpler equivalent, any presumptive blocker from `quality/thermo-nuclear-review`, slop the branch introduces (`quality/deslop`), missing required skills or evidence, or clear breaks of the selected conventions. Order findings as that skill does, structural problems first, and give each the concrete restructuring you want. Compare a suspected regression with the base. Put pre-existing problems, style preferences and process nitpicks under Notes.
+- Use CHANGES for bugs, spec gaps, unmet required checks, weakened tests, swallowed errors, introduced complexity with a simpler equivalent, any presumptive blocker from `quality/thermo-nuclear-review`, slop the branch introduces (`quality/deslop`), missing required skills or evidence, or clear breaks of the selected conventions. Order findings as that skill does, structural problems first, and give each the concrete restructuring you want. Compare a suspected regression with the base. Put pre-existing problems, style preferences and process nitpicks under Notes. A finding names what it rests on: a skill's rule, a spec criterion or contract line, or a bug with the input that triggers it. With none of those it goes under Notes. A fix that would add a route, option or behaviour the spec and intake don't name, or reverse an intake decision, also goes under Notes, for the approver.
 - `## Summary` comes right after the header: 3 to 5 short bullets a human can skim on the dashboard. The detail goes in the sections below it.
 - Under Findings, write "None." when there are none.
 

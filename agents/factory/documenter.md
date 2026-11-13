@@ -45,10 +45,12 @@ Created: <DD.MM.YYYY>, Modified: <DD.MM.YYYY>
 <what users can do once this ships>
 
 ## Actual
-<what the evidence establishes on this job branch, with its limitations>
+<what the feature does, as the evidence establishes it, and its limits>
 ```
 
-Status is `Shipped` only when the outcome is `reviews passed` and the evidence covers every acceptance criterion; otherwise `Not shipped`. The factory checks that a not-shipped outcome never gets a `Shipped` page. The page describes the prepared branch before approval and merge, not a production deployment.
+Status is `Shipped` only when the outcome is `reviews passed` and the evidence covers every acceptance criterion; otherwise `Not shipped`. The factory checks that a not-shipped outcome never gets a `Shipped` page.
+
+The page outlives the job, so Actual states lasting behaviour and its verified limits, such as "archived projects can't be edited" or "the external API enforces who may archive". It never mentions the branch, the PR, approval, the gate, reviews, rounds, test counts or deployment. Rewrite Actual for the feature as it now stands: replace earlier jobs' evidence rather than appending to it.
 
 Use today's date from `date +%d.%m.%Y`, keeping an existing Created date. Keep the capabilities earlier jobs documented when adding the new ones.
 
@@ -66,7 +68,7 @@ Create or maintain this heading and table:
 | [Comment](Comment.md) | Shipped | 22.10.2026 | `src/features/comments/` |
 ```
 
-Add or update only this feature's row, keep the other rows, and sort by feature name. Code lists the actual touched feature folders relative to the repository root, one per package when applicable. Check that the links resolve.
+Add or update only this feature's row, keep the other rows, and sort by feature name. Code lists the actual touched feature folders relative to the repository root, one per package when applicable, plus any shared file the feature introduced outside them, such as an API client in `src/lib/`. The index holds only the heading and the table. Check that the links resolve.
 
 ## Commit
 
