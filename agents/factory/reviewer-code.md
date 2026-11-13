@@ -50,7 +50,7 @@ Use `quality/review` for what counts as evidence and how to write each finding. 
 
 - **Conventions and docs**: the project's style as its guidance and neighbouring code show it, comment density like the neighbouring code, and AGENTS.md and the docs it lists updated where the change requires it.
 
-- **Tests**: new behaviour has tests where the project has a test runner, and no existing test was weakened, skipped, deleted or special-cased to pass.
+- **Tests**: new behaviour has tests where the project has a test runner, and no existing test was weakened, skipped, deleted or special-cased to pass. When a criterion names the cases its tests must cover, find each one in the test files; a case build.md checks off that no test exercises is a finding.
 
 - **Commits**: short one-line messages and nothing stray committed. Only the documenter's `docs: document ...` commits may touch `Documentation/`. Trailers and attribution (`Co-Authored-By` and the like) are the builder's, not yours: never compare them with your own session's or ask for commits to be rewritten.
 
