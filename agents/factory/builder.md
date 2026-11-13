@@ -19,13 +19,13 @@ The worktree is a checkout of the job branch in `.worktrees/<job-id>` inside the
 
 1. `AGENTS.md` (or `CLAUDE.md`) in the worktree and the package guidance the spec's Project table names. Follow them.
 
-2. `<job folder>/spec.md`: its Project map, Skills table, scaffold strategy, contract, permissions and acceptance criteria. The acceptance criteria are your test plan. `issue.md` and `intake.md` are background; the spec is what you build.
+2. `<job folder>/spec.md`: its Project map, Skills table, scaffold strategy, contract, permissions and acceptance criteria. The acceptance criteria are the minimum of your test plan: also write the tests that project guidance and each assigned skill require, such as a unit test for every service. `issue.md` and `intake.md` are background; the spec is what you build.
 
 3. Every skill the spec assigns to `builder` for the work you'll touch. Read the actual files at their resolved paths. Check the list against the catalog and selection rules for the shared guidance and each touched stack. A missing skill, a BLOCKED Skills status, or a touched stack the spec doesn't cover means a BLOCKED build before any implementation.
 
 4. When a round's gate failed, `round-<N>/checks.md` and `checks.log` in the job folder: the failing output of `factory/checks.sh`.
 
-5. When reviews asked for changes, every `review-*.md` in the round folder your prompt names. Address each finding in a `VERDICT: CHANGES` file. Notes in `VERDICT: PASS` files are optional.
+5. When reviews asked for changes, every `review-*.md` in the round folder your prompt names. Address each finding in a `VERDICT: CHANGES` file at its cause, not by special-casing the value or path the reviewer tried. Notes in `VERDICT: PASS` files are optional. A finding whose fix needs a route, URL, copy, option or behaviour that neither the spec nor intake names is a decision only a person can make: write a BLOCKED build naming it instead of inventing one.
 
 6. When your prompt names a `feedback-*.md` file, read it: the user's feedback after the job escalated. Read `decision.md` and every round folder too, so you know the history. The feedback comes before the reviews and the spec where they disagree.
 
@@ -39,7 +39,7 @@ Project guidance takes precedence over skill defaults. Skills never widen what y
 
 2. In round 1, run the setup AGENTS.md gives for a fresh checkout (installing dependencies, copying env files) in the worktree.
 
-3. In round 1, run each package's scaffold strategy from the spec and no other generator. Never run domain-driver in a Laravel app (one with `artisan`), including its React frontend. If domain-driver prints a `Stack:` that differs from the spec, stop and write BLOCKED. Apply Keep, Delete and Then, and commit the generated output on its own before implementing, naming the tool. With a manual strategy, or when nothing needs generating, make no scaffold commit.
+3. In round 1, run each package's scaffold strategy from the spec and no other generator. Never run domain-driver in a Laravel app (one with `artisan`), including its React frontend. If domain-driver prints a `Stack:` that differs from the spec, stop and write BLOCKED. Commit exactly what the commands wrote, plus only the moves the strategy lists, as `Scaffold <feature> with <tool>`, so reviewers can see what the generator produced. Apply Delete in the next commit, naming each removed file, then Then, then implement. With a manual strategy, or when nothing needs generating, make no scaffold commit.
 
 4. Implement the spec with the selected architecture and stack skills. Follow the stack's `actions` skill (`laravel/actions`, `nest/actions`, `next/actions`, `tanstack-start/actions`) for the operation layer. Let the selected generator create the files the plan gives it; create files by hand only under the declared manual strategy or where it doesn't reach. Record any extra generation in build.md.
 
@@ -67,7 +67,7 @@ Last, after your final change and before you write `STATUS: READY`, run `cd <wor
 
 - Never run a command that rewrites files across the repo, such as a lint `--fix` over everything.
 
-- For criteria you can see on a page, start the dev server from AGENTS.md in the worktree on your port; a separate API runs on your port plus 5, with the app pointed at it. When the app needs an API or data the project can't run locally, run a disposable fixture there instead, such as a small mock API or a seeded test database, never a real or shared service. Keep its files in `<job folder>/fixture/`, not on the branch unless the spec asks, and write in build.md the one command that starts it, so the reviewers use the same fixture. Use the project's prescribed browser workflow, otherwise the `agent-browser` CLI (run `agent-browser skills get core` first to learn it) or the environment's native browser. With `agent-browser`, pass `--session <job-id>-builder` on every call so other jobs never drive your browser, and close it with `agent-browser --session <job-id>-builder close`. Exercise only interactions the project's test workflow allows.
+- For criteria you can see on a page, start the dev server from AGENTS.md in the worktree on your port; a separate API runs on your port plus 5, with the app pointed at it. When the app needs an API or data the project can't run locally, run a disposable fixture there instead, such as a small mock API or a seeded test database, never a real or shared service. Keep its files in `<job folder>/fixture/`, not on the branch unless the spec asks, and write in build.md the one command that starts it, so the reviewers use the same fixture. Each reviewer runs it on its own ports, so it takes its ports and allowed origins from arguments or environment variables: write the command with `<port>` and `<port+5>`, never your own numbers. When the page reads a database the project runs locally, the fixture is a database for this job alone, created, migrated and seeded as AGENTS.md allows, with the command that starts the app against it; never point a browser check at the shared development database. If AGENTS.md allows no such database, say so in build.md, and reviewers judge form results from the tests. Use the browser workflow AGENTS.md prescribes, otherwise the `agent-browser` CLI (run `agent-browser skills get core` first). Don't search for other browser tools. With `agent-browser`, pass `--session <job-id>-builder` on every call so other jobs never drive your browser, and close it with `agent-browser --session <job-id>-builder close`. Exercise only interactions the project's test workflow allows.
 
 - Stop only the servers you started, by the PID listening on your ports (`lsof -tiTCP:<port> -sTCP:LISTEN`). Other jobs run dev servers too, so never kill by process name.
 
