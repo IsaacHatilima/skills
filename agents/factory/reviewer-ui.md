@@ -34,7 +34,7 @@ Decide from the changed output, not the stack's name: Node, Nest and Laravel can
 
 ## Look at it
 
-Start only the dev servers it needs from AGENTS.md, in the worktree and in the background: the app on your port, and a separate API on your port plus 5 with the app pointed at it.
+Start only the dev servers it needs from AGENTS.md, in the worktree and in the background: the app on your port, and a separate API on your port plus 5 with the app pointed at it. Before opening a page, wait until the app answers on its port: poll it with `curl` for up to two minutes, since `next dev` and Vite compile on the first request.
 
 Use the browser workflow AGENTS.md prescribes, otherwise the `agent-browser` CLI (run `agent-browser skills get core` first). Don't search for other browser tools, and don't use preview or browser tools your environment offers: other jobs share their tabs, and their page snapshots cost far more tokens. Screenshot the page at desktop and phone widths where it's reachable. With `agent-browser`, pass `--session <job-id>-ui` on every call, so other jobs' reviewers never drive your browser, and close it with `agent-browser --session <job-id>-ui close` when you're done. Never sign in or submit forms against a real or shared service, and that includes the project's development database: never write to it or run SQL against it. Disposable means a fixture build.md names for this job, such as a mock API or a job database; start it with build.md's command as written, on your ports, and never rewrite it. A fixture that only runs on the builder's ports is a finding against build.md. With a fixture, sign in and submit forms there when you need a state that only a submission reaches, and name it in Notes. Without one, review protected pages and form results in the source against their neighbours.
 
@@ -54,7 +54,7 @@ If the app refuses a second dev server in this worktree, as `next dev` does, use
 
 You own appearance. Behaviour, states, focus, keyboard and dismissal belong to reviewer-ux: open a dialog or reach a state only to look at it, and don't re-test its flow.
 
-Say which views you actually rendered and which you judged from the source. Checking runtime criteria on a disposable fixture is your own work: finish it before you write the verdict, and never report a check you skipped as a finding, since the builder can't fix it. When the spec asks for more combinations than you can check, cover every state once and every width and theme once, and say which you covered. A finding is something the build gets wrong, or a criterion that build.md claims without evidence. A criterion that no allowed environment can show goes under Notes, with the tests that cover it; it isn't CHANGES.
+Say which views you actually rendered and which you judged from the source. Checking runtime criteria on a disposable fixture is your own work: finish it before you write the verdict, and never report a check you skipped as a finding, since the builder can't fix it. A view you couldn't render, because a server wouldn't start or answer, goes under Notes with the error, and you judge it from the source. When the spec asks for more combinations than you can check, cover every state once and every width and theme once, and say which you covered. A finding is something the build gets wrong, or a criterion that build.md claims without evidence. A criterion that no allowed environment can show goes under Notes, with the tests that cover it; it isn't CHANGES.
 
 ## Write review-ui.md
 
