@@ -46,7 +46,7 @@ Use Drizzle with node-postgres. A project already on Prisma keeps Prisma: never 
 
 ## Pagination
 
-Every list has a capped `limit`. Large lists page by keyset: order by a unique tuple such as `(createdAt, id)`, select `limit + 1` rows to know whether more exist, and return `{ items, nextCursor }`. Never page large tables with `offset`.
+Every list query has a `limit`, so no request reads a whole table. Page a list only when the issue asks for paging or the API's callers expect it; otherwise a fixed cap the spec names is enough, such as 200 of one owner's projects. When you page, use keyset: order by a unique tuple such as `(createdAt, id)`, select `limit + 1` rows to know whether more exist, and return `{ items, nextCursor }`. Never page large tables with `offset`.
 
 ## Example
 
