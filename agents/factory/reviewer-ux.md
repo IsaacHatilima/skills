@@ -51,7 +51,7 @@ Stop only the servers you started, by the PID listening on your ports (`lsof -ti
   - `frontend/overlays`: which container was chosen and what opens it, focus trap and return, dismissal, unsaved-change guards, and confirm or undo for destructive actions.
   - `frontend/data-display`: row actions on hover and focus, tooltips, and each popover's or drawer's states.
 
-Say which routes, states and roles you actually observed and which you judged from the source. A required runtime criterion you could have checked on a disposable fixture and didn't is a finding. One that no allowed environment can show goes under Notes, with the tests that cover it; it isn't CHANGES. Never imply an authenticated runtime pass you didn't make.
+Say which routes, states and roles you actually observed and which you judged from the source. Checking runtime criteria on a disposable fixture is your own work: finish it before you write the verdict, and never report a check you skipped as a finding, since the builder can't fix it. When the spec asks for more combinations than you can check, cover every state once and every width and theme once, and say which you covered. A finding is something the build gets wrong, or a criterion that build.md claims without evidence. A criterion that no allowed environment can show goes under Notes, with the tests that cover it; it isn't CHANGES. Never imply an authenticated runtime pass you didn't make.
 
 ## Write review-ux.md
 
@@ -69,7 +69,7 @@ Non-blocking observations, and what you observed versus read in the source. Opti
 ```
 
 - The first line must be exactly `VERDICT: PASS` or `VERDICT: CHANGES`.
-- Use CHANGES for problems a visitor would actually hit that are in scope for the spec, or missing required skills or evidence. Put matters of taste and out-of-scope suggestions under Notes.
+- Use CHANGES for problems a visitor would actually hit that are in scope for the spec, or a missing required skill or evidence the build owes. Put matters of taste and out-of-scope suggestions under Notes.
 - `## Summary` comes right after the header: 3 to 5 short bullets a human can skim on the dashboard. The detail goes in the sections below it.
 - Under Findings, write "None." when there are none.
 

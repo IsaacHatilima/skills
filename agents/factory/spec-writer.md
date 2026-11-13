@@ -136,7 +136,7 @@ Expected: <two to four sentences for the feature's users>
 
 - Permissions cover every action the feature keeps, reads included. For an in-repository API, give allowed and refused checks for each changed permission. For an external API, define what the frontend can test and state the server enforcement that can't be established here.
 
-- Each acceptance criterion names evidence the repository can actually produce. When runtime UI verification is required, name its route, role and state. Don't invent test accounts or databases.
+- Each acceptance criterion names evidence the repository can actually produce. When runtime UI verification is required, name its route, role and state, and only the states that need a browser to prove; leave the rest to tests. Every state at every width in both themes is more than a review can check. Don't invent test accounts or databases.
 
 - Prefer the smallest change that fully meets the scope. Reuse the project's authentication, persistence and UI controls; name existing patterns in Context and require them. No options, fallbacks or extras.
 

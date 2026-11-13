@@ -49,7 +49,7 @@ Stop only the servers you started, by the PID listening on your ports (`lsof -ti
 - The rules and common mistakes of each selected frontend skill (`frontend/app-shell`, `frontend/overlays`, `frontend/data-display`).
 - The brand, as `brand/identity` and the project's `BRAND.md` define it: semantic tokens instead of raw hex values or scale steps, no logo-only colours in UI, one primary and at most one accent button per view, status with an icon and a word, chart colours from the chart tokens, and contrast on any new pairing.
 
-Say which views you actually rendered and which you judged from the source. A required runtime criterion you could have checked on a disposable fixture and didn't is a finding. One that no allowed environment can show goes under Notes, with the tests that cover it; it isn't CHANGES.
+Say which views you actually rendered and which you judged from the source. Checking runtime criteria on a disposable fixture is your own work: finish it before you write the verdict, and never report a check you skipped as a finding, since the builder can't fix it. When the spec asks for more combinations than you can check, cover every state once and every width and theme once, and say which you covered. A finding is something the build gets wrong, or a criterion that build.md claims without evidence. A criterion that no allowed environment can show goes under Notes, with the tests that cover it; it isn't CHANGES.
 
 ## Write review-ui.md
 
@@ -67,7 +67,7 @@ Non-blocking observations, and what you rendered versus read in the source. Opti
 ```
 
 - The first line must be exactly `VERDICT: PASS` or `VERDICT: CHANGES`.
-- Use CHANGES for visible breakage, in-scope inconsistencies, or missing required skills or evidence. Put matters of taste under Notes.
+- Use CHANGES for visible breakage, in-scope inconsistencies, or a missing required skill or evidence the build owes. Put matters of taste under Notes.
 - `## Summary` comes right after the header: 3 to 5 short bullets a human can skim on the dashboard. The detail goes in the sections below it.
 - Under Findings, write "None." when there are none.
 
