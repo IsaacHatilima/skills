@@ -28,7 +28,7 @@ Use Drizzle with node-postgres. A project already on Prisma keeps Prisma: never 
 ## Repositories
 
 - A repository owns the SQL it runs. Services never import `Database`, `DRIZZLE`, a schema table, or a `drizzle-orm` operator.
-- domain-driver generates one repository per action, such as `CreateProject.repository.ts` with one `handle()`. SQL that several flows need goes in a shared repository, such as `<area>/shared/repositories/Project.repository.ts`, with named methods that take domain arguments only: `findById(id)`, never `findById(db, id)`.
+- domain-driver generates one repository per action, such as `CreateProject.repository.ts` with one `handle()`. SQL that several flows need goes in a shared repository, such as `<area>/shared/repositories/Project.repository.ts`, with named methods that take domain arguments only: `findById(id)`, never `findById(db, id)`. Pass two or more ids, or any flag, as one object, `handle({ ownerId, id })` or `list({ ownerId, includeArchived })`, so a swapped pair can't compile into a wrong query.
 - Shared repositories return table rows. The flow's repository maps rows to the feature's types (see `dtos`), translates database errors, and opens transactions.
 - Select only what the caller maps: `db.select({ id: projects.id, name: projects.name })` or the relational API with `columns`. Load related rows with a join or `with`, and counts with `count()` and `groupBy`, never with a query inside a loop.
 - Write each column explicitly: `.values({ name: input.name, ownerId })`, `.set({ name: input.name, updatedAt: new Date() })`. Never spread a DTO into `.values()` or `.set()`.

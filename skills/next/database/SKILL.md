@@ -26,7 +26,7 @@ Use Drizzle with node-postgres. A project already on Prisma keeps Prisma: never 
 
 ## Repositories
 
-- domain-driver's `next-fullstack` stack generates one repository per action, such as `server/repositories/CreateProject.repository.ts` with one `handle()`. SQL that several actions need goes in a shared repository with named methods that take domain arguments only.
+- domain-driver's `next-fullstack` stack generates one repository per action, such as `server/repositories/CreateProject.repository.ts` with one `handle()`. SQL that several actions need goes in a shared repository with named methods that take domain arguments only. Pass two or more ids, or any flag, as one object, `handle({ ownerId, id })` or `list({ ownerId, includeArchived })`, so a swapped pair can't compile into a wrong query.
 - Select only what the caller maps: `db.select({ id: projects.id, name: projects.name })`, and `.returning({ ... })` with the same columns. Map rows to the feature's types in one function, never by returning the row.
 - Write each column explicitly in `.values()` and `.set()`. Never spread parsed input into them.
 - Single-row reads end in `.limit(1)` and return `row ?? null`.
@@ -37,7 +37,7 @@ Use Drizzle with node-postgres. A project already on Prisma keeps Prisma: never 
 
 - The repository that owns a multi-statement write opens `db.transaction(async (tx) => …)` and passes `tx` to every statement inside. A shared-repository method used inside one takes a trailing `on: Executor = db`.
 - Keep slow work, such as hashing or calling another service, out of the callback.
-- For a state change, make the expected state part of the write: `update(projects).set({ status: 'archived', updatedAt: new Date() }).where(and(eq(projects.id, id), eq(projects.ownerId, ownerId), eq(projects.status, 'active'))).returning(...)`. No row back means it was missing or already changed: read it once, in the same scope, to tell the user which. Two concurrent requests can't both succeed, because only one update matches. Never read the status first and then write.
+- For a state change, make the expected state part of the write: `update(projects).set({ status: 'archived', updatedAt: new Date() }).where(and(eq(projects.id, id), eq(projects.ownerId, ownerId), eq(projects.status, 'active'))).returning(...)`. No row back means it was missing or already changed: the repository reads it once, in the same scope, and returns what it found, and the service tells the user which. Two concurrent requests can't both succeed, because only one update matches. Never read the status first and then write.
 - Use atomic SQL for counters (`sql\`${t.stock} - 1\``), `pg_advisory_xact_lock` to serialize work per key, and a bounded retry on `40001` and `40P01` under `serializable` or `repeatable read`.
 
 ## Caching and freshness
@@ -73,20 +73,39 @@ import { projects } from '@/db/schema';
 import { projectColumns, toProject } from './Project.record';
 
 export class ArchiveProjectRepository {
-  async handle(ownerId: string, id: string) {
+  async handle({ ownerId, id }: { ownerId: string; id: string }) {
     const owned = and(eq(projects.id, id), eq(projects.ownerId, ownerId));
     const [row] = await db
       .update(projects)
       .set({ status: 'archived', updatedAt: new Date() })
       .where(and(owned, eq(projects.status, 'active')))
       .returning(projectColumns);
-    if (row) return { kind: 'archived' as const, project: toProject(row) };
+    if (row) return { project: toProject(row), exists: true };
 
-    const [current] = await db.select({ status: projects.status }).from(projects).where(owned).limit(1);
-    return current ? { kind: 'already-archived' as const } : { kind: 'missing' as const };
+    const [current] = await db.select({ id: projects.id }).from(projects).where(owned).limit(1);
+    return { project: null, exists: current !== undefined };
   }
 }
 ```
+
+```ts
+// src/app/projects/server/services/ArchiveProject.service.ts
+import 'server-only';
+
+import { ArchiveProjectRepository } from '../repositories/ArchiveProject.repository';
+
+const repository = new ArchiveProjectRepository();
+
+export class ArchiveProjectService {
+  async handle(input: { ownerId: string; id: string }) {
+    const { project, exists } = await repository.handle(input);
+    if (project) return { kind: 'archived' as const, project };
+    return exists ? { kind: 'already-archived' as const } : { kind: 'missing' as const };
+  }
+}
+```
+
+The repository reports what the database did; the service decides what that means for the user.
 
 ## Prisma projects
 

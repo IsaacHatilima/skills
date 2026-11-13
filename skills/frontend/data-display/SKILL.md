@@ -13,7 +13,7 @@ Choose each presentation from the data, not from the component you reached for f
 
 | Data | Present it as |
 |---|---|
-| Small closed set: department, status, severity, category | Chip with a coloured dot or icon plus text |
+| Small closed set: department, status, severity, category | Chip with an icon and a word, never colour alone |
 | Numbers: counts, amounts, durations | Right-aligned with tabular numerals, so digits line up by place value |
 | Long text: emails, descriptions | Truncated, with the full value on hover |
 | Inactive, archived, or deactivated records | Kept in place, row dimmed |

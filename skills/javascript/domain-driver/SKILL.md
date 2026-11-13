@@ -37,8 +37,8 @@ Hooks are one file per action — `<Action><Entity>.hook.ts` exporting `use<Acti
 ## Rules
 
 1. **Scaffold before writing.** If a file the tool can generate does not exist yet, generate it. Do not create `services/FindActiveUsers.service.ts` by hand.
-2. **One action, one file, every layer.** A new operation is a `make:action`, never a new method on an existing action class and never a branch inside Show or List.
-3. **Keep the chain.** page -> hook -> API -> service -> repository. The hook calls the endpoint itself. A controller or route handler validates input and calls one service, a service calls one repository, and repositories do data access only. Never put a service or a repository in front of a `fetch`.
+2. **One action, one file, every layer.** A new operation is a `make:action`, never a new method on an existing action class and never a branch inside Show or List. One file per action is not one copy per action: when two actions share a lifecycle, such as archive and restore hooks that differ only in their endpoint, they call one shared helper instead of repeating it.
+3. **Keep the chain.** page -> hook -> API -> service -> repository. The hook calls the endpoint itself. A controller or route handler validates input and calls one service, a service calls one repository, and repositories do data access only. Never put a service or a repository in front of a `fetch`. On `next-fullstack` with Server Actions (`next/actions`), the chain is page -> Server Action -> service -> repository: delete the route handler and the fetch hook a command generates for that operation, and write the action in `server/actions/<Action><Entity>.action.ts`. Keep a route handler only for callers outside the app, such as webhooks.
 4. **Names.** Feature folders kebab-case. Entities, actions, and classes PascalCase. Action names include their noun: `archiveUser`, `findActiveUsers`.
 5. **Do not widen the standard five.** List returns all, Show returns one by id, Create takes the create schema, Update takes id and the update schema, Delete takes id. Anything else is a bespoke action.
 6. **Finish what the tool leaves open.** Fill the `TODO` in each repository. Add the printed line to `<feature>.routes.ts` on Node or register the printed classes in `<feature>.module.ts` on Nest. Add fields to the Zod schemas.
@@ -47,7 +47,7 @@ Hooks are one file per action — `<Action><Entity>.hook.ts` exporting `use<Acti
 
 ## Layout by stack
 
-- Next.js: `app/<feature>` or `src/app/<feature>`; route handlers under `app/api/<feature>`.
+- Next.js: `app/<feature>` or `src/app/<feature>`; route handlers under `app/api/<feature>`. The tool detects `next-fullstack` only when `app/api` (or `src/app/api`) exists; a full-stack app without one passes `--stack next-fullstack`.
 - React (including Vite) and Node: `src/features/<feature>` or `features/<feature>`. Nest a feature under another with `--root`, as the starter's auth screens do: `npx domain-driver --root src/features/auth make:feature two-factor-setup`.
 - Nest: `src/features/<feature>` when `src/features` exists, otherwise `src/<feature>`, with a `<feature>.module.ts`. A project that groups flows into areas, as nestjs-starter does, scaffolds each with `--root src/<area>` so it lands in the area and registers in `src/<area>/<area>.module.ts`.
 - TanStack Start: `src/routes/<feature>` or `routes/<feature>`; every layer folder is prefixed with `-` so the router ignores it, and the entry file is `index.tsx`, not `page.tsx`.

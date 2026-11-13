@@ -15,7 +15,7 @@ A Server Action is a public POST endpoint. For the app's own forms it replaces d
 - **Check auth inside every action.** A page or layout check does not protect it. Take the caller from the session, not from arguments. When the client names a record, check the caller may change it.
 - **Validate with Zod.** `safeParse` the input with the feature's `schemas/<Action><Entity>.schema.ts` and pass on only `parsed.data`.
 - **Delegate.** Call the matching service's `handle()`. No queries or business rules in the action.
-- **Return expected failures, throw the rest.** Under `useActionState`, the action takes `(previousState, formData)` and returns a typed state. Throw only what the user can't fix; the nearest `error.tsx` shows it.
+- **Return expected failures, throw the rest.** Under `useActionState`, the action takes `(previousState, formData)` and returns a typed state. Throw only what the user can't fix; the nearest `error.tsx` shows it, and its retry button calls `retry()`, which fetches the segment again. `reset()` only re-renders what already failed.
 - **Refresh, then redirect.** `revalidatePath(path)` refreshes one route. `updateTag(tag)` shows the user their write at once. `revalidateTag(tag, 'max')` refreshes in the background. `refresh()` re-renders the page without touching the cache. `redirect()` throws, so call it last and outside `try`.
 - **Return little.** Arguments and results must serialize: primitives, plain objects, arrays, `Date`, `Map`, `Set`, `FormData`. Class instances and ordinary functions don't. Return what the UI renders, never a whole record. Bodies over 1 MB fail unless `serverActions.bodySizeLimit` is raised.
 
