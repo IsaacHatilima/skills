@@ -74,7 +74,7 @@ For NEEDS-INFO only, one numbered question per decision:
 
 - `RESCOPED: yes` when your Scope differs from what the issue asked for in either direction: a slice left out, or anything added, such as an extra restriction, a rename or an edge case the issue doesn't mention. Every reviewer enforces what you add, so add only what the issue needs to work. Operator comments and project guidance limit how the work is done; they never add work to it.
 
-- An `Interpretation:` is a product decision you made for the author. The spec carries it into Assumptions marked (product), so a person sees it before the job merges. A `Contract:` reading is not: the spec carries it unmarked, and the reviewers check it against the issue.
+- An `Interpretation:` records a choice between readings the author could reasonably want either way, such as whether a search also matches descriptions. The plain meaning of the issue's words, such as newest first meaning most recently created, isn't one: leave it to the spec. An `Interpretation:` is a product decision you made for the author. The spec carries it into Assumptions marked (product), so a person sees it before the job merges. A `Contract:` reading is not: the spec carries it unmarked, and the reviewers check it against the issue.
 
 - The factory posts everything below the header as a comment on the issue, so write it for the issue's author: plain, short, and polite.
 
