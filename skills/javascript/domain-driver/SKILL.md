@@ -21,16 +21,19 @@ On Nest the tool registers what it generates: the feature module in the root mod
 |---|---|
 | New feature with every layer | `npx domain-driver make:feature users/User -a` |
 | New feature, folders only | `npx domain-driver make:feature users` |
-| Entity interface | `npx domain-driver make:types users/User` |
+| Entity schema and its inferred type | `npx domain-driver make:types users/User` |
 | Create and Update schemas (and Nest DTOs) | `npx domain-driver make:schema users/User` |
 | Five repositories | `npx domain-driver make:repository users/User` |
 | Five services | `npx domain-driver make:service users/User` |
 | Five controllers or Next route handlers | `npx domain-driver make:controller users/User` |
 | A bespoke operation | `npx domain-driver make:action users/User findActiveUsers` |
-| Bespoke operation with a request body | `npx domain-driver make:action users/User archiveUser --with-input --returns one` |
+| Bespoke operation with a request body | `npx domain-driver make:action users/User inviteUser --with-input --returns one` |
+| A command on one record | `npx domain-driver make:action projects/Project archiveProject --on-record --method patch --returns one` |
 | Component, container, hook | `npx domain-driver make:component users/UserCard`, `make:container users/UserContainer`, `make:hook users/User` |
 
 `make:service` and `make:repository` generate the server side only, because that is the only side there is. They are unavailable on `next-frontend` and `react`, whose API lives outside the project; on those stacks the hook is the whole client.
+
+`make:action` without `--method` is a POST when it takes `--with-input` and a GET otherwise, and a GET that returns data becomes a query hook that runs on mount. So a command such as archive, restore or delete always names its method, and one that acts on a record passes `--on-record`, which routes it at `/:id/<slug>` and passes the id through every layer. When the feature is the action itself, as in nestjs-starter's one feature per flow, the action takes the feature's own route instead of repeating its name. Needs 0.10.0 or later.
 
 Hooks are one file per action — `<Action><Entity>.hook.ts` exporting `use<Action><Entity>` — never a combined `use<Entity>.ts`. On `tanstack-start` they are TanStack Query hooks backed by a generated `<feature>.keys.ts`; elsewhere they are plain React state. From 0.9.1 the plain-state query hook keeps one result tagged with its request and derives `loading` and `error` from it, so it passes `eslint-plugin-react-hooks` 7 (`react-hooks/set-state-in-effect`). Keep that shape when you extend a hook: set state only in the request's callbacks or in event handlers, never synchronously in an effect. Older versions generate hooks that fail the rule; upgrade domain-driver rather than working around them. Never defer the call with `queueMicrotask` or `setTimeout`, or disable the rule, to get past the linter.
 
@@ -42,8 +45,8 @@ Hooks are one file per action — `<Action><Entity>.hook.ts` exporting `use<Acti
 4. **Names.** Feature folders kebab-case. Entities, actions, and classes PascalCase. Action names include their noun: `archiveUser`, `findActiveUsers`.
 5. **Do not widen the standard five.** List returns all, Show returns one by id, Create takes the create schema, Update takes id and the update schema, Delete takes id. Anything else is a bespoke action.
 6. **Finish what the tool leaves open.** Fill the `TODO` in each repository. Add the printed line to `<feature>.routes.ts` on Node or register the printed classes in `<feature>.module.ts` on Nest. Add fields to the Zod schemas.
-7. **Zod is part of the stack.** The generated schemas import `zod`. When `package.json` lacks it, add it in the same change; never replace the generated schemas with hand-written parsers or type guards. Parse every request body and API response with a schema, and derive the feature's types with `z.infer` instead of keeping a parallel interface in `types/`.
-8. **Shared plumbing lives outside features.** The API base URL, the fetch helper, the response envelope and its error type are the same for every feature. Keep them once in `src/lib/` (or the project's equivalent), created with the first feature that needs them, and have each hook call the endpoint through them. A feature folder holds only that feature's code, and nothing in it is named after the feature when it isn't specific to it.
+7. **Zod is part of the stack.** The generated schemas import `zod`. When `package.json` lacks it, add it in the same change; never replace the generated schemas with hand-written parsers or type guards. Parse every request body and API response with a schema, and derive the feature's types with `z.infer` instead of keeping a parallel interface in `types/`. From 0.10.0 the tool does this itself: `schemas/<Entity>.schema.ts` holds `<Entity>Schema`, `types/<Entity>.types.ts` infers from it, and generated hooks parse each response with it. Add the entity's fields to the schema, not the type.
+8. **Shared plumbing lives outside features.** The API base URL, the fetch helper, the response envelope and its error type are the same for every feature. Keep them once in `src/lib/` (or the project's equivalent), created with the first feature that needs them, and have each hook call the endpoint through them. Generated hooks call `fetch` with a relative `/api/...` path as a placeholder: route each through that client when you fill it in. A feature folder holds only that feature's code, and nothing in it is named after the feature when it isn't specific to it.
 
 ## Layout by stack
 
