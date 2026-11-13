@@ -48,8 +48,10 @@ ESCALATE if any of them fails, or if the change:
 - changes deploy, CI, hosting or build configuration;
 - migrates a database schema, sends email or other messages, writes production data, or adds or upgrades a dependency;
 - relies on an API outside this repository to enforce an access rule that the issue doesn't state, such as an endpoint or check the spec assumes. Calling a contract the issue gives is not this case: the issue is the person's own statement of what the API does;
-- rests on a spec Assumption marked (product), or one that is really a product or business decision, such as pricing, public copy about the business, or what is free versus paid;
+- rests on a spec Assumption marked (product), or one that is really a product or business decision, such as pricing, public copy about the business, or what is free versus paid. A decision the person accepted in a `feedback-*.md` is settled and doesn't count;
 - touches anything the project's Software factory section says a person must always see.
+
+Decide from this list and your own checks. A reviewer's remark about who must approve the job, or what a person must confirm, is not a reason to escalate.
 
 ## Write decision.md
 
