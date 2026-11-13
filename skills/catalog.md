@@ -59,6 +59,14 @@ Laravel 13 conventions, including React and Inertia inside a Laravel app (`larav
 | laravel/security | `laravel/security/SKILL.md` | Adding or reviewing Laravel authorization, policies, authentication, API tokens, CORS, CSRF exceptions, file uploads, raw queries, HTML output, rate limits, or production configuration, or before deploying a Laravel application. |
 | laravel/tests | `laravel/tests/SKILL.md` | Writing, choosing, or running tests for a Laravel application, including Pest unit, feature, action, HTTP, and browser tests, or deciding which tests a change needs. |
 
+## Next
+
+Next.js conventions beyond its Server Actions (`next/actions`, under Stack actions).
+
+| Skill id | Canonical path | Use when |
+|---|---|---|
+| next/database | `next/database/SKILL.md` | Writing persistence in a Next.js app: the Drizzle client and schema, repository queries, transactions and races, database errors, migrations, caching user data, or database-backed tests. |
+
 ## Nest
 
 NestJS conventions for Drizzle and Zod, with the file layout domain-driver generates. A project already on Prisma keeps it; each persistence skill ends with its Prisma equivalents. Business operations use `nest/actions`.

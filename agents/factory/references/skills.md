@@ -15,6 +15,7 @@ Select by the code actually changed, including server functions and rendered pag
 | `laravel/*` | spec-writer, builder, reviewer-code | Applicable Laravel paths. Use `laravel/frontend` for React/Inertia inside a Laravel app. |
 | `nest/*` | spec-writer, builder, reviewer-code | Applicable Nest paths. |
 | `next/actions` | spec-writer, builder, reviewer-code | A Next Server Action or its callers change. |
+| `next/database` | spec-writer, builder, reviewer-code, reviewer-security | A Next app's schema, migrations, repositories or database-backed tests change. |
 | `tanstack-start/actions` | spec-writer, builder, reviewer-code | A TanStack server function or its callers change. |
 | `javascript/domain-driver` | spec-writer, builder, reviewer-code | Scaffolding in a JavaScript package that uses domain-driver. Laravel uses Artisan or an explicit manual strategy. |
 | `typescript/best-practices` | builder, reviewer-code, reviewer-security | Any `.ts` or `.tsx` file changes, in whatever stack. |

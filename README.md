@@ -29,7 +29,7 @@ skills/
   catalog.md               shared capability index
   laravel/                 actions, controllers, data, models, requests, tests, ... (Laravel 13)
   nest/                    actions, controllers, dtos, database, migrations, ...
-  next/                    actions
+  next/                    actions, database
   tanstack-start/          actions
   frontend/                app-shell, overlays, data-display
   quality/                 simplicity, review, thermo-nuclear-review, deslop, security-review
@@ -58,7 +58,7 @@ The [catalog](skills/catalog.md) lists reusable capabilities and path-resolution
 | `skills/laravel/` | Laravel 13 conventions: [actions](skills/laravel/actions/SKILL.md), [api-responses](skills/laravel/api-responses/SKILL.md), [architecture](skills/laravel/architecture/SKILL.md), [controllers](skills/laravel/controllers/SKILL.md), [data](skills/laravel/data/SKILL.md), [eloquent-strictness](skills/laravel/eloquent-strictness/SKILL.md), [enums](skills/laravel/enums/SKILL.md), [frontend](skills/laravel/frontend/SKILL.md), [insights](skills/laravel/insights/SKILL.md), [jobs](skills/laravel/jobs/SKILL.md), [migrations](skills/laravel/migrations/SKILL.md), [models](skills/laravel/models/SKILL.md), [phpstan](skills/laravel/phpstan/SKILL.md), [requests](skills/laravel/requests/SKILL.md), [security](skills/laravel/security/SKILL.md), [tests](skills/laravel/tests/SKILL.md) |
 | `skills/nest/` | NestJS conventions for Drizzle (or an existing Prisma setup) and Zod: [actions](skills/nest/actions/SKILL.md), [api-responses](skills/nest/api-responses/SKILL.md), [architecture](skills/nest/architecture/SKILL.md), [controllers](skills/nest/controllers/SKILL.md), [database](skills/nest/database/SKILL.md), [dtos](skills/nest/dtos/SKILL.md), [jobs](skills/nest/jobs/SKILL.md), [migrations](skills/nest/migrations/SKILL.md), [security](skills/nest/security/SKILL.md), [tests](skills/nest/tests/SKILL.md) |
 | `skills/javascript/` | [domain-driver CLI](skills/javascript/domain-driver/SKILL.md) |
-| `skills/next/` | [Next actions](skills/next/actions/SKILL.md) |
+| `skills/next/` | [actions](skills/next/actions/SKILL.md), [database](skills/next/database/SKILL.md) (Drizzle, or an existing Prisma setup) |
 | `skills/tanstack-start/` | [TanStack Start actions](skills/tanstack-start/actions/SKILL.md) |
 | `skills/frontend/` | Stack-agnostic: [app-shell](skills/frontend/app-shell/SKILL.md), [overlays](skills/frontend/overlays/SKILL.md), [data-display](skills/frontend/data-display/SKILL.md) |
 | `skills/quality/` | Stack-agnostic: [simplicity](skills/quality/simplicity/SKILL.md), [review](skills/quality/review/SKILL.md), [thermo-nuclear-review](skills/quality/thermo-nuclear-review/SKILL.md) and [deslop](skills/quality/deslop/SKILL.md) (from Cursor), [security-review](skills/quality/security-review/SKILL.md) (with Cloudflare's attack-class checklists) |
