@@ -72,11 +72,14 @@ class CommandsTest(unittest.TestCase):
         self.rollout("unpriced", {job_id: 2}, model="gpt-unknown")
         self.rollout("orchestrator", {job_id: 2}, parent=None)
         self.rollout("another-repo", {job_id: 2}, cwd=s.tmp / "another-repo")
+        # A sibling checkout whose path starts with this one's, with a job of the same id.
+        self.rollout("sibling-repo", {job_id: 2}, cwd=f"{s.repo}-2")
         self.rollout("mostly-the-other-job", {job_id: 1, other: 3})
         s.job("sync", job_id)
         s.job("sync", other)
         # A priced session: 0.4M uncached input $0.80 + 0.6M cached $0.30 + 0.1M output $1.00 = $2.10.
-        # Unpriced models add tokens but no dollars; orchestrators and other repositories don't count.
+        # Unpriced models add tokens but no dollars; orchestrators and other repositories, even
+        # one whose path starts with this one's, don't count.
         self.assertEqual((s.job_json(job_id)["cost_usd"], s.job_json(job_id)["tokens"]), (2.1, 2_200_000))
         self.assertEqual((s.job_json(other)["cost_usd"], s.job_json(other)["tokens"]), (2.1, 1_100_000))
         self.assertRegex(s.job("summary", job_id).stdout, rf"{job_id}.*\$2\.10\s+2\.2M")

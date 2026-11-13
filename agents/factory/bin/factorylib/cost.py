@@ -107,6 +107,15 @@ def _codex_paths(since):
             yield path
 
 
+def _in_repo(cwd):
+    """Whether a session ran in this repository or below it, such as in a job's worktree.
+
+    A plain prefix test would also take a sibling checkout like `<repo>-2`.
+    """
+    root = str(repo())
+    return cwd == root or cwd.startswith(root.rstrip(os.sep) + os.sep)
+
+
 @cache
 def _codex_session(path, mtime):
     """(job id, model, total usage) of a Codex subagent session in this repo, or None.
@@ -116,7 +125,7 @@ def _codex_session(path, mtime):
     mentions, model, usage = {}, None, None
     with Path(path).open() as f:
         meta = json.loads(f.readline()).get("payload") or {}
-        if not meta.get("parent_thread_id") or not str(meta.get("cwd", "")).startswith(str(repo())):
+        if not meta.get("parent_thread_id") or not _in_repo(str(meta.get("cwd", ""))):
             return None
         for line in f:
             for job_id in JOB_FOLDER.findall(line):
