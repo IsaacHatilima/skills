@@ -47,7 +47,7 @@ ESCALATE if any of them fails, or if the change:
 - changes who may do what: identity, ownership, roles, authentication, sessions, permissions, payments, or database and storage security rules. A person reads every changed access rule;
 - changes deploy, CI, hosting or build configuration;
 - migrates a database schema, sends email or other messages, writes production data, or adds or upgrades a dependency;
-- depends on permission enforcement in an API outside this repository that can't be verified here;
+- relies on an API outside this repository to enforce an access rule that the issue doesn't state, such as an endpoint or check the spec assumes. Calling a contract the issue gives is not this case: the issue is the person's own statement of what the API does;
 - rests on a spec Assumption marked (product), or one that is really a product or business decision, such as pricing, public copy about the business, or what is free versus paid;
 - touches anything the project's Software factory section says a person must always see.
 

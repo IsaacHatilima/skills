@@ -13,7 +13,7 @@ The flow is **page -> hook -> API -> service -> repository**, with schemas and t
 
 The tool reads `package.json` and prints `Stack: <stack> (detected), root: <dir>` before every command. Stacks: `next-fullstack`, `next-frontend`, `react`, `node` (Express, Fastify, Hono, or none), `nest`, `tanstack-start`. Override with `--stack <name>` if detection is wrong. A Vite app with React and no Next.js, such as [vite-dashboard-starter](https://github.com/IsaacHatilima/vite-dashboard-starter), is the `react` stack: components, containers, hooks, schemas and types in the feature, with hooks calling an API that lives outside the project.
 Where features are written can be overridden too: `--root <dir>` for one command, or a `domainDriver.featureRoot` key in `package.json` for the project. Read the root off the stack line rather than assuming the convention.
-On Nest the tool registers what it generates: the feature module in the root module, and controllers, services and repositories in `<feature>.module.ts`. Do not add those by hand — it prints what it registered, and prints the lines to paste when it cannot. A bespoke action controller is placed before `Show<Entity>Controller` so its route is not swallowed by `/:id`.
+On Nest the tool registers what it generates: the feature module in the root module (from 0.9.2, in `<root>/<root>.module.ts` when `--root` names an area folder that has one), and controllers, services and repositories in `<feature>.module.ts`. Do not add those by hand — it prints what it registered, and prints the lines to paste when it cannot. A bespoke action controller is placed before `Show<Entity>Controller` so its route is not swallowed by `/:id`.
 
 ## Commands
 
@@ -32,7 +32,7 @@ On Nest the tool registers what it generates: the feature module in the root mod
 
 `make:service` and `make:repository` generate the server side only, because that is the only side there is. They are unavailable on `next-frontend` and `react`, whose API lives outside the project; on those stacks the hook is the whole client.
 
-Hooks are one file per action — `<Action><Entity>.hook.ts` exporting `use<Action><Entity>` — never a combined `use<Entity>.ts`. On `tanstack-start` they are TanStack Query hooks backed by a generated `<feature>.keys.ts`; elsewhere they are plain React state. A project that lints with `eslint-plugin-react-hooks` 7 rejects the generated plain-state hooks, which call `setState` synchronously inside an effect (`react-hooks/set-state-in-effect`). Fix the pattern rather than hiding it: start in the loading state, set state only in the request's promise callbacks, and refetch from an event handler that sets loading and bumps a request counter the effect depends on. Never defer the call with `queueMicrotask` or `setTimeout`, or disable the rule, to get past the linter.
+Hooks are one file per action — `<Action><Entity>.hook.ts` exporting `use<Action><Entity>` — never a combined `use<Entity>.ts`. On `tanstack-start` they are TanStack Query hooks backed by a generated `<feature>.keys.ts`; elsewhere they are plain React state. From 0.9.1 the plain-state query hook keeps one result tagged with its request and derives `loading` and `error` from it, so it passes `eslint-plugin-react-hooks` 7 (`react-hooks/set-state-in-effect`). Keep that shape when you extend a hook: set state only in the request's callbacks or in event handlers, never synchronously in an effect. Older versions generate hooks that fail the rule; upgrade domain-driver rather than working around them. Never defer the call with `queueMicrotask` or `setTimeout`, or disable the rule, to get past the linter.
 
 ## Rules
 
@@ -49,5 +49,5 @@ Hooks are one file per action — `<Action><Entity>.hook.ts` exporting `use<Acti
 
 - Next.js: `app/<feature>` or `src/app/<feature>`; route handlers under `app/api/<feature>`.
 - React (including Vite) and Node: `src/features/<feature>` or `features/<feature>`. Nest a feature under another with `--root`, as the starter's auth screens do: `npx domain-driver --root src/features/auth make:feature two-factor-setup`.
-- Nest: `src/features/<feature>` when `src/features` exists, otherwise `src/<feature>`, with a `<feature>.module.ts`.
+- Nest: `src/features/<feature>` when `src/features` exists, otherwise `src/<feature>`, with a `<feature>.module.ts`. A project that groups flows into areas, as nestjs-starter does, scaffolds each with `--root src/<area>` so it lands in the area and registers in `src/<area>/<area>.module.ts`.
 - TanStack Start: `src/routes/<feature>` or `routes/<feature>`; every layer folder is prefixed with `-` so the router ignores it, and the entry file is `index.tsx`, not `page.tsx`.
