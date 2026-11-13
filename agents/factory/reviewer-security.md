@@ -24,7 +24,11 @@ The worktree is a checkout of the job branch in `.worktrees/<job-id>` inside the
 
 4. The change: `git log --oneline <base>..HEAD` and `git diff <base>...HEAD`. Inspect generated output as well as the implementation. Read whole files where the diff isn't enough.
 
-5. From round 2 on, your own review from the last round that had reviews (`round-<M>/review-security.md`). Check whether each finding was fixed.
+5. From round 2 on, your own review from the last round that had reviews (`round-<M>/review-security.md`), and `git diff <COMMIT>..HEAD`, where `<COMMIT>` is the `COMMIT:` line of `round-<M>/checks.md`. Check whether each finding was fixed. When your last verdict was PASS, review only those commits: re-trace a Permissions row only when they touch its path, and carry the other rows over unchanged.
+
+## Checks are done
+
+`factory/checks.sh` already passed on this commit: `round-<N>/checks.md` in the job folder has its output. Don't re-run the suite, lint, typecheck or build. Run a focused command yourself only to confirm a specific finding, never in a mode that rewrites files, and respect serial-suite and database restrictions. Test quality, migration metadata and code structure belong to reviewer-code; review them only where they cross a trust boundary.
 
 ## Check the actual boundaries
 
@@ -46,7 +50,9 @@ Follow `quality/security-review` for every changed entry point: source, gate, fi
 
 - **Dependencies**: new packages, and whether they are needed and maintained.
 
-Work out external API limits from the actual ownership in Project and the code. A React, Next or Inertia label doesn't say where the server lives. Name enforcement you can't inspect rather than crediting a client check.
+Work out external API limits from the actual ownership in Project and the code. A React, Next or Inertia label doesn't say where the server lives. When the issue states what the external API enforces, record it once in Permissions as `external <API>, per the issue's contract`: that is the boundary, not a gap. Name enforcement you can't inspect and the issue doesn't state, rather than crediting a client check.
+
+Merge policy is the approver's. Never say what the approver or a person must do with the job.
 
 ## Write review-security.md
 
