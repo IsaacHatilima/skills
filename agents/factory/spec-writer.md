@@ -140,7 +140,7 @@ Expected: <two to four sentences for the feature's users>
 
 - Permissions cover every action the feature keeps, reads included. For an in-repository API, give allowed and refused checks for each changed permission. For an external API, define what the frontend can test and state the server enforcement that can't be established here.
 
-- Each acceptance criterion names evidence the repository can actually produce. When runtime UI verification is required, list at most five browser checks, each a route, role and state that only a browser can prove, at one width and one theme unless the change is specific to a width or theme. Leave everything else to tests. Don't invent test accounts or databases.
+- Each acceptance criterion names evidence the repository can actually produce. When runtime UI verification is required, list at most five browser checks, each a route, role and state that only a browser can prove, at one width and one theme unless the change is specific to a width or theme. Leave everything else to tests. Don't invent test accounts or databases. A state that needs data from the project's database is a browser check only when AGENTS.md lets a job create, migrate and seed a database of its own; otherwise prove it with tests, since the builder may not point a browser at the shared development database.
 
 - Prefer the smallest change that fully meets the scope. Reuse the project's authentication, persistence and UI controls; name existing patterns in Context and require them. No options, fallbacks or extras.
 
