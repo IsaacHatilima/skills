@@ -228,6 +228,8 @@ Prepare the project the session is in. Work in the main checkout and stay on the
    - A person must always see: <changes the approver must escalate in this project, beyond its defaults>
    ```
 
+   When the project has a UI, also state its browser workflow in `AGENTS.md` as the one to use, not an option: for example, "Browser checks use `agent-browser` with a session named after the job and the agent's port. Don't use editor or environment preview tools: other jobs share their tabs." The builder and the UI and UX reviewers follow the workflow `AGENTS.md` prescribes, and a project that only says a tool "can" be used leaves them to the environment's own preview tools, whose page snapshots cost several times as many tokens.
+
    Exclude `.worktrees/` in any test runner, linter or watcher that doesn't read `.gitignore`, such as Jest's `testPathIgnorePatterns` or Vitest's `exclude`.
 
 6. **Verify.** `bash factory/checks.sh` exits 0 in the main checkout; if it fails there, the factory can never pass a job, so fix the script (not the project) or tell the user what's broken. `<bin>/job queue` runs without an error. `python3 -m json.tool factory/config.json` succeeds. `git check-ignore factory/jobs/x .worktrees/x` prints both paths, and `git status --porcelain --untracked-files=all` lists `factory/config.json`, `factory/checks.sh` and `factory/dashboard.html` as committable.
