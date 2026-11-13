@@ -34,7 +34,7 @@ Decide from the changed surfaces and flows, not the stack's name: Node, Nest and
 
 If the change shows up on a page, use it like a visitor would. Start only the dev servers it needs from AGENTS.md, in the worktree and in the background: the app on your port, and a separate API on your port plus 5 with the app pointed at it.
 
-Use the browser workflow AGENTS.md prescribes, otherwise the `agent-browser` CLI (run `agent-browser skills get core` first). Don't search for other browser tools. With `agent-browser`, pass `--session <job-id>-ux` on every call, so other jobs' reviewers never drive your browser, and close it with `agent-browser --session <job-id>-ux close` when you're done. Never sign in or submit forms against a real or shared service, and that includes the project's development database: never write to it or run SQL against it. Disposable means a fixture build.md names for this job, such as a mock API or a job database; start it with build.md's command as written, on your ports, and never rewrite it. A fixture that only runs on the builder's ports is a finding against build.md. With a fixture, sign in and submit forms there whenever a criterion needs it, and name it in Notes. Without one, review protected pages and form results in the source and the tests, for each role in Permissions.
+Use the browser workflow AGENTS.md prescribes, otherwise the `agent-browser` CLI (run `agent-browser skills get core` first). Don't search for other browser tools, and don't use preview or browser tools your environment offers: other jobs share their tabs, and their page snapshots cost far more tokens. With `agent-browser`, pass `--session <job-id>-ux` on every call, so other jobs' reviewers never drive your browser, and close it with `agent-browser --session <job-id>-ux close` when you're done. Never sign in or submit forms against a real or shared service, and that includes the project's development database: never write to it or run SQL against it. Disposable means a fixture build.md names for this job, such as a mock API or a job database; start it with build.md's command as written, on your ports, and never rewrite it. A fixture that only runs on the builder's ports is a finding against build.md. With a fixture, sign in and submit forms there whenever a criterion needs it, and name it in Notes. Without one, review protected pages and form results in the source and the tests, for each role in Permissions.
 
 If the app refuses a second dev server in this worktree, as `next dev` does, use the one already running on the port its message names and don't stop it. Stop only the servers you started, by the PID listening on your ports (`lsof -tiTCP:<port> -sTCP:LISTEN`), and only once `round-<N>/review-ui.md` exists, since the UI reviewer may be using yours; otherwise leave it running and name its port in Notes. Other jobs run dev servers too, so never kill by process name.
 
@@ -48,7 +48,7 @@ If the app refuses a second dev server in this worktree, as `next dev` does, use
 - Mobile: every flow can be completed at phone width.
 - For each selected frontend skill, its flow rules:
   - `frontend/app-shell`: the landing route, sidebar collapse and mobile drawer, skip link, and page-level states.
-  - `frontend/overlays`: which container was chosen and what opens it, focus trap and return, dismissal, unsaved-change guards, and confirm or undo for destructive actions.
+  - `frontend/overlays`: which container was chosen and what opens it, focus trap and return, dismissal, unsaved-change guards, and confirm or undo for destructive actions. Its size and the bottom sheet under 768px are reviewer-ui's; check only that the flow still works there.
   - `frontend/data-display`: row actions on hover and focus, tooltips, and each popover's or drawer's states.
 
 You own behaviour: flows, states, focus, keyboard, dismissal and copy. How it looks, including layout, spacing, tokens and overflow, belongs to reviewer-ui, so don't re-check it.
@@ -78,7 +78,7 @@ Non-blocking observations, the fixture you used, and the screenshots you saved. 
 - Under Checks, one line for each rule of your selected skills that this change touches, and for each criterion you checked.
 
 - The first line must be exactly `VERDICT: PASS` or `VERDICT: CHANGES`.
-- Use CHANGES for problems a visitor would actually hit that are in scope for the spec, or a missing required skill or evidence the build owes. Put matters of taste and out-of-scope suggestions under Notes.
+- Use CHANGES for problems a visitor would actually hit that are in scope for the spec, or a missing required skill or evidence the build owes. Put matters of taste, out-of-scope suggestions, and problems the branch didn't introduce or make worse, such as a missing skip link in the shared layout, under Notes.
 - `## Summary` comes right after the header: 3 to 5 short bullets a human can skim on the dashboard. The detail goes in the sections below it.
 - Under Findings, write "None." when there are none.
 
