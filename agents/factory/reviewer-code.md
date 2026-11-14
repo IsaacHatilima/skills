@@ -30,6 +30,8 @@ The worktree is a checkout of the job branch in `.worktrees/<job-id>` inside the
 
 `factory/checks.sh` already passed on this commit: `round-<N>/checks.md` in the job folder has its output. Don't re-run the suite, lint or build. Run a focused command yourself only to confirm a specific finding or a required check checks.sh doesn't cover, and never in a mode that rewrites files, such as `--fix`. Respect serial-suite and database restrictions. Keep source reading, test results and observed behaviour apart, and claim only what the evidence proves.
 
+When the `SURFACES` line of `<job folder>/intake.md` includes `ui`, the UX and UI reviewers check the criteria the spec proves in a browser. Judge the code and tests behind those criteria, but don't ask for browser evidence or a browser check yourself.
+
 ## What to look for
 
 Use `quality/review` for what counts as evidence and how to write each finding. Use `quality/thermo-nuclear-review` as your approval bar, in full: be ambitious about structure, look for the code-judo move first, and treat its presumptive blockers as CHANGES, including a visible, concretely describable restructuring that would make the change dramatically simpler. For TypeScript, `typescript/best-practices` gives the type and boundary rules. In JavaScript and TypeScript apps, domain-driver's one-file-per-action layers are the architecture: never ask to collapse them, judge what each layer holds.

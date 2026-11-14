@@ -7,7 +7,7 @@ description: Use when adding, changing, or reviewing a Next.js Server Action, a 
 
 Applies to: `app/<feature>/server/actions/*.action.ts` and the forms that call them. Project guidance (`AGENTS.md`, `CLAUDE.md`) wins over these defaults.
 
-A Server Action is a public POST endpoint. For the app's own forms it replaces domain-driver's route handler and fetch hook. Route handlers (`app/api/**/route.ts`) remain the controller layer for other HTTP clients and are not covered here.
+A Server Action is a public POST endpoint. For the app's own forms it replaces a route handler and fetch hook. domain-driver 0.11.0 and later generates one for each write on `next-fullstack`, failing closed with `await requireCaller();` until you replace that line with the session check below. Route handlers (`app/api/**/route.ts`) remain the controller layer for other HTTP clients and are not covered here.
 
 ## Rules
 

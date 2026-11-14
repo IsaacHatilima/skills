@@ -49,11 +49,14 @@ RESCOPED: yes | no
 For ACCEPT: what will be built, in a few lines, and what is left out. This is
 the brief the spec writer follows, so make it specific about behaviour. Leave
 files and implementation to the spec writer. Each reading you chose where the
-issue is silent or ambiguous is its own bullet starting `Interpretation:`.
+issue is silent or ambiguous about what users get is its own bullet starting
+`Interpretation:`. Each reading of an API or data contract the issue gives,
+such as an abbreviated response shape or an unstated status code, is its own
+bullet starting `Contract:`.
 
 ## Changed from the issue
 Only when RESCOPED is yes: each thing you added, removed or narrowed, one
-bullet each.
+bullet each. A `Contract:` reading isn't a change.
 
 ## Why
 Two or three sentences on the decision, citing the code you looked at.
@@ -71,7 +74,7 @@ For NEEDS-INFO only, one numbered question per decision:
 
 - `RESCOPED: yes` when your Scope differs from what the issue asked for in either direction: a slice left out, or anything added, such as an extra restriction, a rename or an edge case the issue doesn't mention. Every reviewer enforces what you add, so add only what the issue needs to work. Operator comments and project guidance limit how the work is done; they never add work to it.
 
-- An `Interpretation:` is a product decision you made for the author. The spec carries it into Assumptions marked (product), so a person sees it before the job merges.
+- An `Interpretation:` records a choice between readings the author could reasonably want either way, such as whether a search also matches descriptions. The plain meaning of the issue's words, such as newest first meaning most recently created, isn't one: leave it to the spec. An `Interpretation:` is a product decision you made for the author. The spec carries it into Assumptions marked (product), so a person sees it before the job merges. A `Contract:` reading is not: the spec carries it unmarked, and the reviewers check it against the issue.
 
 - The factory posts everything below the header as a comment on the issue, so write it for the issue's author: plain, short, and polite.
 
