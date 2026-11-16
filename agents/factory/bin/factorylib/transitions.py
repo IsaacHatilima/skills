@@ -10,7 +10,7 @@ builder never touches Documentation/, and the documenter touches nothing else.
 import re
 from pathlib import Path
 
-from . import github
+from . import github, learning
 from .cost import usage
 from .jobfiles import all_jobs, first_line, header, job_dir, now, reviewers, round_dir, section
 from .project import base_branch, config, require, run
@@ -23,7 +23,8 @@ TRANSITIONS = {
     "spec": {"build", "needs-human"},
     "build": {"gate", "document"},
     "gate": {"review", "build", "document"},
-    "review": {"build", "document"},
+    "review": {"teach", "build", "document"},
+    "teach": {"build", "document"},
     "document": {"approve", "needs-human"},
     "approve": {"merging", "needs-human"},
     "merging": {"needs-human"},
@@ -88,7 +89,7 @@ def sync(job):
     if job["round"]:
         rd = round_dir(job)
         job["gate"] = header(rd / "checks.md").get("GATE") if (rd / "checks.md").exists() else None
-        if job["agents"] and job["stage"] in {"review", "document", "approve", "merging", "merged", "needs-human"}:
+        if job["agents"] and job["stage"] in {"review", "teach", "document", "approve", "merging", "merged", "needs-human"}:
             job["reviews"] = {}
             for r in reviewers(job):
                 line = first_line(rd / f"review-{r}.md")
@@ -203,6 +204,9 @@ def from_build(job, stage):
             f"{job['branch']} has no commits on top of {base}")
     docs = [p for p in changed_paths(job, job["round_base"]) if p.startswith("Documentation/")]
     require(not docs, f"the builder changed Documentation/, which the documenter owns: {', '.join(docs)}")
+    knowledge = (job.get("knowledge_root") or learning.knowledge_relative()) + "/"
+    lessons = [p for p in changed_paths(job, job["round_base"]) if p.startswith(knowledge)]
+    require(not lessons, f"the builder changed knowledge files, which the teacher owns: {', '.join(lessons)}")
     git(job, "fetch", "origin", job["branch"], check=False)
     res = git(job, "rev-parse", f"origin/{job['branch']}", check=False)
     remote = res.stdout.strip() if res.returncode == 0 else ""
@@ -236,12 +240,24 @@ def from_gate(job, stage):
 
 def from_review(job, stage):
     rd = round_dir(job)
+    require(header(rd / "checks.md").get("GATE") == "PASS", "the reviewed gate receipt must remain PASS")
     missing = [r for r in reviewers(job) if not (rd / f"review-{r}.md").exists()]
     require(not missing, f"round {job['round']} is missing reviews from: {', '.join(missing)}")
     bad = [r for r, v in job["reviews"].items() if v not in {"PASS", "CHANGES"}]
     require(not bad, f"the first line of review-{bad[0]}.md isn't a verdict" if bad else "")
     require_unchanged(job, header(rd / "checks.md").get("COMMIT", ""), "a reviewer")
     changes = [r for r, v in job["reviews"].items() if v == "CHANGES"]
+    pending = learning.resolutions(job)
+    if pending:
+        require(stage == "teach", "confirmed fixes need the teacher first: advance to teach")
+        next_stage = "build" if changes and job["round"] < job["round_limit"] else "document"
+        learning.prepare(job, pending, next_stage, changes, head(job))
+        return
+    require(stage != "teach", "no new confirmed resolutions need teaching")
+    finish_review(job, stage, changes)
+
+
+def finish_review(job, stage, changes):
     if stage == "document" and not changes:
         return start_document(job, SHIPPED)
     require(changes, "every review passed: go to document")
@@ -251,6 +267,20 @@ def from_review(job, stage):
         return next_round(job)
     start_document(job, OUT_OF_ROUNDS,
                    f"Build rounds ran out. Outstanding CHANGES in round-{job['round']}/ from: {', '.join(changes)}.")
+
+
+def from_teach(job, stage):
+    teaching = job.get("teaching")
+    require(teaching and teaching["round"] == job["round"], "the teaching batch is missing or stale")
+    require(stage == teaching["next_stage"], f"after teaching, go to {teaching['next_stage']}")
+    require_branch(job)
+    require_clean(job)
+    teacher_head = learning.verify(job)
+    check_skills(job)
+    finish_review(job, stage, teaching["changes"])
+    teaching.update(head=teacher_head, completed=now())
+    job["taught_findings"] = sorted(set(job.get("taught_findings", []))
+                                   | {r["finding"] for r in teaching["resolutions"]})
 
 
 def from_document(job, stage):
@@ -313,7 +343,7 @@ def from_needs_human(job, stage):
 
 LEAVE = {
     "queued": from_queued, "intake": from_intake, "needs-info": from_needs_info, "spec": from_spec,
-    "build": from_build, "gate": from_gate, "review": from_review,
+    "build": from_build, "gate": from_gate, "review": from_review, "teach": from_teach,
     "document": from_document, "approve": from_approve, "merging": from_merging,
     "needs-human": from_needs_human,
 }

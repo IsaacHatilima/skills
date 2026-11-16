@@ -1,6 +1,6 @@
 # Factory
 
-Factory turns a description into a reviewed, documented pull request. Run `/factory add a login page` and it creates a local job, checks the scope, writes a spec with the skills each role must read, builds it, tests it with the project's own checks, reviews it and documents it. The approver merges what it approves and hands a person the rest. GitHub provides branches and pull requests; no GitHub issue or label is needed.
+Factory turns a description into a reviewed, documented pull request. Run `/factory add a login page` and it creates a local job, checks the scope, writes a spec with the skills each role must read, builds it, tests it with the project's own checks, reviews it, records reusable lessons from confirmed fixes and documents the feature. The approver merges what it approves and hands a person the rest. GitHub provides branches and pull requests; no GitHub issue or label is needed.
 
 ```text
 /factory <description>         create a local job and build it
@@ -31,6 +31,8 @@ builder → commits, pushes, opens a draft PR referencing the local Factory job
 gate (script) ─FAIL──┤  factory/checks.sh; no reviewer runs on a failing build
         ▼ PASS       │
 reviewers ─CHANGES───┘  code, + ux & ui on UI changes, + security on security changes
+        ▼ completed review round with newly confirmed earlier findings
+teacher → one batched update to project lessons, then the saved build/document step
         ▼ all PASS, or the build is blocked or out of rounds
 documenter → Documentation/<Feature>.md and Documentation/index.md, one commit on the branch
         ▼ shipped                                 not shipped → a person
@@ -41,6 +43,16 @@ approver ── APPROVE  → sync with the base, gate again, gh pr merge
 Brainstorming and grilling are standalone conversations outside Factory. Use the combined `planning-brainstorming` skill to explore an idea and settle its decisions, then supply the agreed design with a feature request if you want Factory to build it. Factory has no grilling command or interactive planning stage. Intake still records blocking NEEDS-INFO questions for the orchestrator to show in the conversation, and waits for locally recorded answers.
 
 One session orchestrates every job, `concurrency` at a time (default 3). Each job gets its own worktree at `.worktrees/<job-id>` on `factory/<job-id>`. All state lives in `factory/jobs/`, so if the session dies, `/factory run` picks every job back up. A person approves an escalated job by merging its PR, or sends it back with `/factory <feedback>`.
+
+## Learning between review rounds
+
+The reusable [learning skill](../../skills/knowledge/learning/SKILL.md), installed as `knowledge-learning`, retrieves and records project engineering knowledge. Spec-writer, builder and reviewers search the grouped index and read relevant lessons before their work, recording IDs and paths or `None applicable`. A login lesson can therefore inform registration through tags and applicability rather than a shared feature name.
+
+The [teacher](teacher.md) runs once for the completed round's batch of explicitly confirmed earlier findings. Reviewers give findings stable IDs and write their verified `fixed` or `dismissed` outcomes in `resolutions-<lens>.json`; PASS or omission alone creates no lesson. The teacher can capture a confirmed repair while another finding remains CHANGES. It updates an existing lesson when the cause recurs, or records no change when there is no reusable conclusion.
+
+Knowledge defaults to `Knowledge/`, with `index.md` grouped by populated technical area and one file per lesson. `factory/config.json` may set `knowledge.root` to a safe repository-relative location. Each lesson explains applicability, the problem/cause, solution, prevention, evidence and limits. The teacher commits knowledge only; the documenter continues to write feature behaviour under `Documentation/`. Teaching preserves the gate/review code commit, has its own validated report and consumes no build round.
+
+No collection is seeded by installation. New lessons help later rounds on that branch and reach other jobs through normal merging and base updates. The skill also works outside Factory: `./install knowledge` installs it without the workflow. A historical lesson informs a review; it never lowers the proof required for a finding or overrides current requirements.
 
 ## Request sources and local job ids
 
@@ -63,6 +75,7 @@ Each role is one file here, with the model, reasoning effort and tools for both 
 | [reviewer-security](reviewer-security.md) | `review-security.md` | opus, high | gpt-6-astra, high | `security` surface |
 | [reviewer-ux](reviewer-ux.md) | `review-ux.md` | sonnet, medium | gpt-6-luna, medium | `ui` surface |
 | [reviewer-ui](reviewer-ui.md) | `review-ui.md` | sonnet, medium | gpt-6-luna, medium | `ui` surface |
+| [teacher](teacher.md) | project knowledge Markdown, `teach.md` | sonnet, high | gpt-6-sol, high | completed review round with new confirmed resolutions |
 | [documenter](documenter.md) | `Documentation/` commit | sonnet, high | gpt-6-sol, high | once the build ends |
 | [approver](approver.md) | `decision.md` | opus, high | gpt-6-astra, high | shipped jobs |
 
@@ -96,8 +109,8 @@ From this repository's root:
 |---|---|
 | `.ai/skills/factory/` | the one copy of the factory: AGENT.md, bin/, templates/, references/ |
 | `.ai/skills/catalog.md`, `.ai/skills/<group>-<name>/` | the bundle's shared skills, one copy each |
-| `.claude/skills/factory/SKILL.md`, `.claude/agents/*.md` | Claude Code: the `/factory` pointer and the nine agents |
-| `.agents/skills/factory/SKILL.md`, `.codex/agents/*.toml` | Codex: the `$factory` pointer and the nine agents |
+| `.claude/skills/factory/SKILL.md`, `.claude/agents/*.md` | Claude Code: the `/factory` pointer and the ten agents |
+| `.agents/skills/factory/SKILL.md`, `.codex/agents/*.toml` | Codex: the `$factory` pointer and the ten agents |
 | A block in `AGENTS.md` and `CLAUDE.md` | where every agent finds the skills |
 
 Every bundle in `bundles.json` that lists the `factory` workflow installs it, with the skills its roles select. The installer never overwrites a file that differs without `--force`, and writes nothing when any would be.

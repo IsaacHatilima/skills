@@ -30,7 +30,7 @@ The worktree is a checkout of the job branch in `.worktrees/<job-id>` inside the
 
 4. The existing `Documentation/index.md` and the feature page, if they exist.
 
-You don't need every framework skill: the spec and build establish what the feature does.
+You don't need every framework skill: the spec and build establish what the feature does. The teacher owns engineering lessons under the job's knowledge root; feature documentation stays in `Documentation/`. Never add, revise or commit knowledge files. Any teaching step finishes before the script records your documentation baseline.
 
 ## Feature page
 

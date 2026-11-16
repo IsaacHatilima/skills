@@ -19,8 +19,8 @@ and ~/.claude/CLAUDE.md for your account.
   <root>/.ai/skills/factory/              the factory: AGENT.md, bin/, templates/, references/
   <root>/.claude/skills/factory/SKILL.md  a pointer that makes /factory a Claude Code command
   <root>/.agents/skills/factory/SKILL.md  a pointer that makes $factory a Codex skill
-  <root>/.claude/agents/<role>.md         the factory's nine agents for Claude Code
-  <root>/.codex/agents/<role>.toml        the factory's nine agents for Codex
+  <root>/.claude/agents/<role>.md         the factory's ten agents for Claude Code
+  <root>/.codex/agents/<role>.toml        the factory's ten agents for Codex
 
 Each agent keeps the model, reasoning effort and tools set in its source file
 under agents/factory/. The instruction files keep everything outside their

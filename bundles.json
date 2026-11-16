@@ -3,10 +3,14 @@
     "description": "Standalone brainstorming with grill-me questioning, without the factory",
     "skills": ["planning/*"]
   },
+  "knowledge": {
+    "description": "Retrieve and record verified project lessons without the factory",
+    "skills": ["knowledge/learning"]
+  },
   "basic": {
-    "description": "The factory plus the skills every project uses: planning, code quality and review, TypeScript, and brand identity",
+    "description": "The factory plus planning, learning, code quality and review, TypeScript, and brand identity",
     "workflows": ["factory"],
-    "skills": ["planning/*", "quality/*", "typescript/*", "brand/*"]
+    "skills": ["planning/*", "knowledge/learning", "quality/*", "typescript/*", "brand/*"]
   },
   "web": {
     "description": "Web apps (Vite, Next.js, TanStack Start): basic plus the frontend skills and domain-driver",

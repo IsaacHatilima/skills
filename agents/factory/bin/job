@@ -39,7 +39,7 @@ import subprocess  # noqa: E402
 from datetime import datetime, timezone  # noqa: E402
 from pathlib import Path  # noqa: E402
 
-from factorylib import github, requests  # noqa: E402
+from factorylib import github, learning, requests  # noqa: E402
 from factorylib.cost import short_tokens  # noqa: E402
 from factorylib.jobfiles import (  # noqa: E402
     all_jobs, dispatch_lock, job_dir, now, prompt_header, resolve, save)
@@ -91,6 +91,7 @@ def cmd_create(args):
                 "source URL must use http or https")
         source = {"provider": parsed.source, "key": parsed.key, "url": parsed.url}
     skills = resolve_skills()
+    knowledge = learning.knowledge_relative()
     jobs_dir().mkdir(parents=True, exist_ok=True)
     numbers = [int(p.name.split("-", 1)[0]) for p in jobs_dir().iterdir()
                if p.is_dir() and p.name.split("-", 1)[0].isdigit()]
@@ -105,6 +106,7 @@ def cmd_create(args):
         "intake": None, "agents": None, "gate": None, "reviews": {},
         "outcome": None, "escalation": None, "doc": None, "doc_base": None, "doc_head": None,
         "skills": skills, "cost_usd": 0.0, "tokens": 0, "started": now(), "ended": None,
+        "knowledge_root": knowledge, "taught_findings": [], "teaching": None,
     }
     requests.write_request(job, text)
     save(job)

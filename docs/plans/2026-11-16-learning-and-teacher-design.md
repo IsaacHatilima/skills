@@ -1,6 +1,6 @@
 # Learning skill and Factory teacher
 
-Status: design for implementation; no learning workflow has been implemented.
+Status: implementation follows this design; verification results are reported with its pull request.
 
 ## Intent
 
@@ -10,7 +10,7 @@ Primary readers are agents. Success means agents retrieve relevant, evidence-bac
 
 ## Decisions settled in the conversation
 
-1. Provide a reusable learning skill, callable outside Factory, and a dedicated Factory teacher that uses it.
+1. Provide the reusable `knowledge-learning` skill, callable outside Factory, and a dedicated Factory teacher that uses it.
 2. Keep feature documentation with the existing documenter. The teacher writes reusable engineering knowledge.
 3. Group the index by technical area: UI/UX, Database and Queries, Hooks and State, Authentication and Security, APIs and Integrations, Testing, and other areas when lessons justify them. Do not create empty categories.
 4. Give each entry a title, short applicability description, tags and a link to its lesson. Use one primary category and tags for other relevant areas.
@@ -26,7 +26,7 @@ The operational choices below are proposed implementation details, not additiona
 
 ## Learning skill and knowledge files
 
-Proposed skill location: `skills/knowledge/learning/SKILL.md`, installed as `knowledge-learning`. Include it in `all` and in the core bundle used by Factory; allow a knowledge-only bundle so another workflow can use it independently.
+Skill location: `skills/knowledge/learning/SKILL.md`, installed as `knowledge-learning`. Include it in `all` and in the core bundle used by Factory; allow a knowledge-only bundle so another workflow can use it independently.
 
 The skill covers two operations: retrieve lessons relevant to the current task, and record or revise lessons from verified outcomes. The invoking workflow supplies evidence, write scope and ownership. The skill itself neither starts Factory nor changes application code.
 
@@ -136,3 +136,23 @@ Implementation should establish:
 Use isolated temporary repositories and fake provider calls for transition and installation checks. Also exercise one small realistic two-feature scenario: a confirmed login defect becomes a lesson, and registration's spec and builder read it before implementation. That proves retrieval and adherence in that scenario; reduced review rounds across real work remains something to measure.
 
 Choices left to implementation: the teacher's exact host model settings, finding-identifier syntax, compact round-report fields and matching heuristics. Start with Markdown, the grouped index and ordinary repository search; no embedding service or separate database is required.
+
+
+## Proposed defaults used by the implementation
+
+These defaults fill in the design's operational choices; they are implementation proposals, not additional decisions attributed to Isaac.
+
+| Choice | Proposed default and reason |
+|---|---|
+| Skill and bundle | Source `skills/knowledge/learning/SKILL.md`, installed `knowledge-learning`; `knowledge` installs it alone and `basic` carries it for Factory. |
+| Teacher models and tools | Claude `sonnet`, high; Codex `gpt-6-sol`, high; Read, Grep, Glob, Bash, Edit, Write. These match the existing documenter's writing profile without changing any other role. |
+| Knowledge root | `factory/config.json` field `knowledge.root`, default `Knowledge`, validated as a safe repository-relative root. The job records its scope so another checkout cannot be written. |
+| Retrieval | Ordinary repository search of the grouped index's applicability and tags, followed by the selected lesson files. Roles record lesson IDs/paths and their effect under `## Knowledge`, or `None applicable`. No embeddings or extra service. |
+| Finding identity | A new finding begins `1. [code-r1-1] ...` under Findings, using the review lens, first round and item number. Keep the ID while open; a later regression gets a new occurrence ID. |
+| Explicit resolution | Optional `round-N/resolutions-<lens>.json` array of `{finding, outcome, commit, evidence, limits}`. Outcome is `fixed` or `dismissed`; commit is the current gate's full SHA; evidence and limits are nonblank. Only that reviewer's earlier CHANGES findings qualify. Absent/empty arrays do not trigger teaching. |
+| Pipeline | `review -> teach -> build/document` only for newly confirmed resolutions; otherwise retain the direct transition. Batch all new confirmed resolutions from the completed round, including partial repairs while another finding remains CHANGES. Save the reviewed commit and intended next stage separately. |
+| Teacher report | `round-N/teach.md` starts with `STATUS: RECORDED` or `NO_CHANGE`, `COMMIT` (reviewed code SHA), `FINDINGS` (the complete batch), and `LESSONS` (relative lesson paths or `none`), followed by Summary and Reasons. A no-op makes no commit. |
+| Lesson contract | Metadata ID, Category, Tags, Verified (`YYYY-MM-DD`), Status (`verified-on-branch` or `superseded`); headings Use when, Problem, Cause, Solution, Prevention, Evidence and Limits. Evidence records the original finding, fix and reviewed commits, durable repository/PR reference and checked code/test paths. |
+| Writing and resuming | One direct knowledge-only commit after the reviewed commit, or NO_CHANGE with no commit; only the current teach report may change in the job folder. Scripts validate scope, unchanged reviewer evidence and the processed batch, and resume a completed result before restarting the agent. The next build/document baseline starts after teaching. |
+| Index preservation | Existing active links must survive. Removing an active link requires changing that lesson to superseded, preserving its history and linking an active replacement; superseded lessons leave the active index. |
+| Empty or conflicting knowledge | Installation creates no knowledge directory. A missing collection is normal. Preserve both branches' additions during a merge; unresolved conflicts follow existing human escalation rather than discarding lessons. |

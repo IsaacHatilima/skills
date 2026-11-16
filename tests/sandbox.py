@@ -69,6 +69,11 @@ class Sandbox:
         (skills / "catalog.md").write_text("# Shared skill catalog\n")
         self.skill_path = skills / "quality-review" / "SKILL.md"
         self.skill_path.write_text("---\nname: quality-review\ndescription: Review.\n---\n")
+        learning = skills / "knowledge-learning"
+        learning.mkdir()
+        self.learning_skill_path = learning / "SKILL.md"
+        self.learning_skill_path.write_text(
+            "---\nname: knowledge-learning\ndescription: Use when retrieving or recording verified lessons.\n---\n")
 
     # ---- running things ----------------------------------------------------
 

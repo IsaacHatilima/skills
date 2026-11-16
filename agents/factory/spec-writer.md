@@ -26,6 +26,10 @@ The worktree is a checkout of the job branch, fresh from the base branch, in `.w
 
 5. When your prompt names a `feedback-*.md` file, your earlier spec was BLOCKED and a person answered it: read it and `decision.md`, then rewrite spec.md with that answer.
 
+## Read relevant lessons
+
+Read the `knowledge-learning` skill and the knowledge root named by the job header. Before designing the change, search its `index.md` by affected behaviour, boundaries and tags, then read the matching lessons against current code. An absent collection means no lessons yet. Record the lesson IDs, paths and their effect on this spec under `## Knowledge`, or `None applicable` with a short reason. Assign `knowledge/learning` to spec-writer, builder, routed reviewers and teacher in Skills; keep it available to unrouted reviewer assignments too. Do not turn a historical lesson into a new product requirement or assume that its old fix fits this version.
+
 ## Learn the project and select skills
 
 1. Inspect tracked manifests, lockfiles, root and package guidance, routes, data access, neighbouring tests, and setup, dev and check commands. Record the actual package roots and installed framework versions before choosing a generator or skills.
@@ -77,6 +81,9 @@ Status: READY
 | Skill | Package or scope | Roles | Resolved path | Why |
 |---|---|---|---|---|
 | <catalog skill id> | <touched package or whole job> | <agent names> | <absolute readable SKILL.md path> | <task-specific trigger> |
+
+## Knowledge
+<lesson IDs and paths read, their relevance and limits, or None applicable with why>
 
 ## Context
 <the existing feature, caller context, data layer, response shapes and related files, with paths>

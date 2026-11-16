@@ -30,6 +30,7 @@ Select these when present in the installed catalog and relevant to the task. A L
 
 | Skill id | Assign to | Condition |
 |---|---|---|
+| `knowledge/learning` | spec-writer, builder, reviewer-code, reviewer-security, reviewer-ux, reviewer-ui, teacher | Every job retrieves applicable project lessons; the teacher records only the script's confirmed resolution batch. A missing collection is normal; the core skill must be installed. |
 | `quality/simplicity` | builder, reviewer-code | Application code changes. |
 | `quality/deslop` | builder, reviewer-code | Application code changes. The builder removes slop before handing over; the reviewer flags what remains. |
 | `quality/thermo-nuclear-review` | builder, reviewer-code | Application code changes. It is the code reviewer's approval bar, so the builder applies it before handing over. |
@@ -39,5 +40,7 @@ Select these when present in the installed catalog and relevant to the task. A L
 | `frontend/app-shell` | builder, reviewer-ux, reviewer-ui | Layout, navigation, sidebar, header, redirect, or page-level states change. |
 | `frontend/overlays` | builder, reviewer-ux, reviewer-ui | An overlay or confirmation is added or changed. |
 | `frontend/data-display` | builder, reviewer-ux, reviewer-ui | A table, list, timeline, KPI tile, or chart changes. |
+
+The project knowledge root defaults to `Knowledge/`; `factory/config.json` can set `knowledge.root` to a safe repository-relative folder. The job header identifies its root. Spec-writer, builder and reviewers search the grouped index and read relevant entries before their substantive work, recording lesson IDs and paths or `None applicable`. They never author lessons. Teacher writes knowledge; documenter writes feature docs only. An absent collection does not block a job and never causes the installer to seed lessons.
 
 Resolve paths using the installed catalog's precedence rules and record absolute readable paths. Library roots are read-only during a feature job. Skill selection does not change write ownership or approval policy.

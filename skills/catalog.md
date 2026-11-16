@@ -100,6 +100,14 @@ Standalone conversations with the person who owns an idea before implementation.
 |---|---|---|
 | planning/brainstorming | `planning/brainstorming/SKILL.md` | Brainstorming an idea, feature or design, or asking to be grilled: explore intent and approaches, probe decisions in rounds with recommendations, and write an agreed design. Runs outside Factory. Skip fully specified, authorized changes. |
 
+## Knowledge
+
+Project-local engineering lessons for agents. Retrieve by behaviour, applicability and tags before specification, implementation or review; record or revise entries only from verified outcomes. An absent collection is normal for a new project.
+
+| Skill id | Canonical path | Use when |
+|---|---|---|
+| knowledge/learning | `knowledge/learning/SKILL.md` | Finding relevant prior lessons or recording reusable reasoning from explicitly verified fixes or dismissed findings in a grouped project knowledge index. |
+
 ## Brand
 
 A product's identity: colour systems composed from the [brand-colours](https://github.com/IsaacHatilima/brand-colours) library, typography, logo and voice.
