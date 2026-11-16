@@ -14,7 +14,7 @@ Then start a new Claude Code or Codex session: they load skills, agents and comm
 
 ```text
 install                    installs bundles of skills, and the factory, for your account or a project
-bundles.json               the bundles: planning, basic, web, laravel, api, all
+bundles.json               the bundles: planning, knowledge, basic, web, laravel, api, all
 scripts/
   sync-brand-colours       refreshes brand/identity's colour library, generator and reference systems
 agents/
@@ -36,6 +36,7 @@ skills/
   typescript/              best-practices
   brand/                   identity: brand.py, the colour library and generator, reference systems
   planning/                brainstorming with Matt Pocock's grill-me questioning built in
+  knowledge/               learning: retrieve and record verified project lessons
   javascript/              domain-driver CLI guidance
 tests/                     python3 -m unittest discover -s tests
 ```
@@ -43,7 +44,7 @@ tests/                     python3 -m unittest discover -s tests
 
 ## Agent workflows
 
-[Factory](agents/factory/README.md) builds descriptions into reviewed, documented pull requests: intake, specification, implementation, a scripted gate, routed reviews, documentation, and approval. It is adapted from the ZazenCodes software factory v2 and, like the original, licensed under the [GPLv3](agents/factory/LICENSE).
+[Factory](agents/factory/README.md) builds descriptions into reviewed, documented pull requests: intake, specification, implementation, a scripted gate, routed reviews, learning from confirmed fixes, feature documentation, and approval. It is adapted from the ZazenCodes software factory v2 and, like the original, licensed under the [GPLv3](agents/factory/LICENSE).
 
 After [installing it](#installing), run `/factory setup` once in a project, then `/factory <description>` in Claude Code. Codex invokes skills with `$`, so there it is `$factory setup` and `$factory <description>`. `/factory add a login page` creates a local job and builds it; `/factory run` resumes queued jobs. Optional `/factory mitarbo <task-key>` reads one explicitly named task through the host's connected Mitarbo tool. Plain descriptions need no task-service connection. GitHub remains the branch and pull-request host; Factory creates no issues or labels. `AGENT.md` owns the workflow; `SKILL.md` adapts it to hosts that expose commands through skills. It is outside the shared capability library.
 
@@ -64,6 +65,7 @@ The [catalog](skills/catalog.md) lists reusable capabilities and path-resolution
 | `skills/quality/` | Stack-agnostic: [simplicity](skills/quality/simplicity/SKILL.md), [review](skills/quality/review/SKILL.md), [thermo-nuclear-review](skills/quality/thermo-nuclear-review/SKILL.md) and [deslop](skills/quality/deslop/SKILL.md) (from Cursor), [security-review](skills/quality/security-review/SKILL.md) (with Cloudflare's attack-class checklists) |
 | `skills/typescript/` | [best-practices](skills/typescript/best-practices/SKILL.md) (from pstack): unions, brands, boundary parsing, no casts |
 | `skills/planning/` | [brainstorming](skills/planning/brainstorming/SKILL.md): Superpowers' discovery and design process combined with Matt Pocock's grill-me decision tree, probing questions and recommended answers, as one standalone skill outside Factory |
+| `skills/knowledge/` | [learning](skills/knowledge/learning/SKILL.md): retrieve relevant project lessons before specification, implementation and review; record or revise reusable reasoning from verified outcomes in a grouped knowledge index |
 | `skills/brand/` | [identity](skills/brand/identity/SKILL.md): composes a brand's colour system and guidelines from the [brand-colours](https://github.com/IsaacHatilima/brand-colours) library, then theming, typography, logo, BRAND.md |
 
 Factory uses its role instructions for discovery, verification, and documentation, and selects additional capabilities from the installed catalog.
@@ -76,6 +78,8 @@ Brainstorming combines Superpowers 7.0.2 and Matt Pocock's grill-me in one skill
 
 The `all` bundle includes it, as do `basic` and the bundles that include `basic`. Install just this skill with `./install planning`. Its installed name is `planning-brainstorming`: ask your agent, "Use planning-brainstorming to brainstorm this idea and grill me about it." Factory does not run this conversation; you can hand the finished design to any implementation workflow later.
 
+`knowledge-learning` works independently of Factory and is included in `basic` and `all`. Its knowledge lives in each project's `Knowledge/` folder, indexed by technical area, applicability and tags. Factory's teacher captures confirmed fixes once per completed review round; its spec writer, builders and reviewers read the relevant lessons first. The documenter keeps feature docs. Installation creates no lessons or empty knowledge tree.
+
 ## Installing
 
 On a new machine, clone this repository and install the bundles you use. It needs `git` and `python3` 3.10 or later. Everything goes into your home directory, for every project, unless you pass `--project`.
@@ -83,7 +87,8 @@ On a new machine, clone this repository and install the bundles you use. It need
 ```bash
 ./install --list                      # the bundles and what they hold
 ./install planning                    # brainstorming with grill-me questioning; no factory
-./install basic                       # factory, planning, quality, TypeScript, brand
+./install knowledge                   # retrieve and record verified lessons; no factory
+./install basic                       # factory, planning, learning, quality, TypeScript, brand
 ./install web                         # basic plus frontend, domain-driver, Next, TanStack Start (Vite apps too)
 ./install web api                     # several bundles install their union, such as a Vite or Next app with a Nest API
 ./install laravel                     # basic plus the Laravel and frontend skills
@@ -104,7 +109,7 @@ Every skill has one copy, in `.ai/skills/` (`~/.ai/skills/` for your account), w
 
 - **Skills.** Each `skills/<group>/<name>/` becomes `.ai/skills/<group>-<name>/`, with that `name`.
 - **Catalog.** `skills/catalog.md` goes to `.ai/skills/catalog.md`. The factory resolves skills through it; a catalog skill that isn't installed blocks a job only when that job needs it.
-- **Factory.** A bundle with the `factory` workflow puts the factory in `.ai/skills/factory/`. Claude Code and Codex register commands only from their own folders, so `.claude/skills/factory/SKILL.md` (`/factory`) and `.agents/skills/factory/SKILL.md` (`$factory`) are short pointers to it. Its nine roles become `.claude/agents/<name>.md` (with `tools`, `model` and `effort` from `claude-tools`, `claude-model` and `claude-effort`) and `.codex/agents/<name>.toml` (with `model` and `model_reasoning_effort` from `codex-model` and `codex-reasoning-effort`, and the Markdown body as `developer_instructions`). Then run `/factory setup` once in each project.
+- **Factory.** A bundle with the `factory` workflow puts the factory in `.ai/skills/factory/`. Claude Code and Codex register commands only from their own folders, so `.claude/skills/factory/SKILL.md` (`/factory`) and `.agents/skills/factory/SKILL.md` (`$factory`) are short pointers to it. Its ten roles become `.claude/agents/<name>.md` (with `tools`, `model` and `effort` from `claude-tools`, `claude-model` and `claude-effort`) and `.codex/agents/<name>.toml` (with `model` and `model_reasoning_effort` from `codex-model` and `codex-reasoning-effort`, and the Markdown body as `developer_instructions`). Then run `/factory setup` once in each project.
 
 Existing files that differ are left alone unless you pass `--force`. Pull this repository and rerun the same command to update.
 

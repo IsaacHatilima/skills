@@ -12,7 +12,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 INSTALL = ROOT / "install"
 ROLES = ["approver", "builder", "documenter", "intake", "reviewer-code", "reviewer-security",
-         "reviewer-ui", "reviewer-ux", "spec-writer"]
+         "reviewer-ui", "reviewer-ux", "spec-writer", "teacher"]
 BLOCK = re.compile(r"<!-- skills:start -->.*?<!-- skills:end -->", re.S)
 
 
@@ -116,6 +116,22 @@ class InstallTest(unittest.TestCase):
         self.assertTrue((self.skills / "factory/AGENT.md").is_file())
         self.assertFalse((self.skills / "planning-grilling").exists())
 
+    def test_learning_installs_without_factory_and_basic_adds_both_teacher_formats(self):
+        self.install("knowledge", "--project", str(self.project))
+        installed = {p.parent.name for p in self.skills.glob("*/SKILL.md")}
+        self.assertEqual(installed, {"knowledge-learning"})
+        self.assertFalse((self.skills / "factory").exists())
+        self.assertFalse((self.project / "Knowledge").exists(), "installing never invents lessons")
+        for name in ("AGENTS.md", "CLAUDE.md"):
+            self.assertIn("| `knowledge-learning` |", (self.project / name).read_text())
+
+        self.install("basic", "--project", str(self.project))
+        for path in (self.project / ".claude/agents/teacher.md",
+                     self.project / ".codex/agents/teacher.toml"):
+            self.assertTrue(path.is_file(), path)
+        self.assertTrue((self.skills / "knowledge-learning/SKILL.md").is_file())
+        self.assertFalse((self.project / "Knowledge").exists())
+
     # ---- agents
 
     def test_agents_keep_their_models_effort_and_tools(self):
@@ -200,7 +216,7 @@ class InstallTest(unittest.TestCase):
 
     def test_list_shows_the_bundles(self):
         out = self.install("--list").stdout
-        for name in ("planning", "basic", "web", "laravel", "api", "all"):
+        for name in ("planning", "knowledge", "basic", "web", "laravel", "api", "all"):
             self.assertRegex(out, rf"(?m)^  {name}\s+\d+ skills")
 
     def test_a_bundle_is_required(self):
@@ -211,7 +227,7 @@ class InstallTest(unittest.TestCase):
     def test_unknown_bundle_is_refused(self):
         res = self.install("rails", "--project", str(self.project), check=False)
         self.assertEqual(res.returncode, 1)
-        self.assertIn("unknown bundle 'rails'; have: all, api, basic, laravel, planning, web", res.stderr)
+        self.assertIn("unknown bundle 'rails'; have: all, api, basic, knowledge, laravel, planning, web", res.stderr)
 
 
 if __name__ == "__main__":

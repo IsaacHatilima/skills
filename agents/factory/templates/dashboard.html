@@ -291,14 +291,14 @@ const COLUMNS = [
   { label: 'Intake', who: 'queue · intake', stages: ['queued', 'intake', 'needs-info'] },
   { label: 'Spec', who: 'spec-writer', stages: ['spec'] },
   { label: 'Build', who: 'builder · gate', stages: ['build', 'gate'] },
-  { label: 'Review', who: 'routed reviewers', stages: ['review'] },
+  { label: 'Review', who: 'routed reviewers · teacher', stages: ['review', 'teach'] },
   { label: 'Document', who: 'documenter', stages: ['document'] },
   { label: 'Approve', who: 'approver · merge', stages: ['approve', 'merging'] },
   { label: 'Needs human', who: 'you', stages: ['needs-human'], cls: 'human' },
   { label: 'Done', who: 'merged · rejected', stages: ['merged', 'rejected'], cls: 'merged-col' },
 ]
 const STAGES = new Set(COLUMNS.flatMap((c) => c.stages))
-const LIVE = new Set(['intake', 'spec', 'build', 'gate', 'review', 'document', 'approve', 'merging'])
+const LIVE = new Set(['intake', 'spec', 'build', 'gate', 'review', 'teach', 'document', 'approve', 'merging'])
 // job.json lists a job's routed reviewers; older jobs kept a reviewer → model map.
 const reviewersOf = (job) => {
   const r = job.agents?.reviewers || []
@@ -493,7 +493,7 @@ async function listFiles(dir) {
 }
 
 const ORDER = ['request.md', 'issue.md', 'intake.md', 'spec.md', 'build.md', 'decision.md', 'rejection.md']
-const ROUND_ORDER = ['checks', 'review-code', 'review-security', 'review-ux', 'review-ui', 'merge-checks']
+const ROUND_ORDER = ['checks', 'review-code', 'review-security', 'review-ux', 'review-ui', 'teach', 'merge-checks']
 
 function fileRank(path) {
   if (ORDER.includes(path)) return [0, ORDER.indexOf(path), path]

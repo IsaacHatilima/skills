@@ -121,6 +121,9 @@ def port(job, role):
 def prompt_header(job, role=None):
     """The line every agent prompt starts with. Cost is found by its `Job folder:` text."""
     skills = job["skills"]
+    from .learning import knowledge_root, learning_skill
+
+    lesson_skill = learning_skill(job)
     parts = [
         f"Job: {job['id']}.",
         f"Job folder: {job_dir(job['id'])}/.",
@@ -129,6 +132,8 @@ def prompt_header(job, role=None):
         f"Branch: {job['branch']}.",
         f"Base: origin/{base_branch()}.",
         f"Request: {job_dir(job['id']) / 'request.md'}.",
+        f"Knowledge root: {knowledge_root(job)}/.",
+        f"Learning skill: {lesson_skill or 'unavailable (knowledge/learning)' }.",
     ]
     source = job.get("source") or {}
     if source.get("key"):

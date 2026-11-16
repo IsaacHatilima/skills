@@ -3,6 +3,7 @@
   "max_rounds": 3,
   "base_branch": "main",
   "merge_method": "merge",
+  "knowledge": { "root": "Knowledge" },
   "routing": {
     "low": ["code"],
     "medium": ["code"],

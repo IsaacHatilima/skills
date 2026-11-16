@@ -28,6 +28,8 @@ The worktree is a checkout of the job branch in `.worktrees/<job-id>` inside the
 
 5. The feature page the spec names under `## Documentation`, and `Documentation/index.md`.
 
+6. Any completed teaching reports and knowledge-only commits. Check that lessons preserve the reviewed commit, source findings, evidence limits and branch provenance. The earlier gate/reviews cover their recorded code commit, not a later knowledge or documentation commit. The scripts separately validate the teacher's write scope; lessons do not waive the acceptance criteria or review requirements.
+
 ## Decide
 
 APPROVE only if all of these hold:

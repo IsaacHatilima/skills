@@ -75,6 +75,13 @@ class BundleTest(unittest.TestCase):
         self.assertEqual(len(all_skills), len(skill_dirs()))
         self.assertEqual(workflows, ["factory"])
 
+    def test_factory_core_and_all_carry_learning_but_knowledge_is_independent(self):
+        for name in ("basic", "all"):
+            skills, workflows = self.installer.resolve([name])
+            self.assertIn("knowledge/learning", skills)
+            self.assertIn("factory", workflows)
+        self.assertEqual(self.installer.resolve(["knowledge"]), (["knowledge/learning"], []))
+
     def test_a_bundle_without_workflows_installs_no_factory(self):
         self.use_bundles({"brand": {"skills": ["brand/identity"]}})
         self.assertEqual(self.installer.resolve(["brand"]), (["brand/identity"], []))
