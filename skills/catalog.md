@@ -94,11 +94,11 @@ Language rules for any TypeScript package. Combine with the stack skills for the
 
 ## Planning
 
-Turning a loose idea into decisions with the person who owns it, before a spec exists.
+Standalone conversations with the person who owns an idea before implementation. Brainstorming includes grill-me's decision tree and rounds of questions with recommended answers, then produces an agreed design. These sessions run outside Factory; Factory does not invoke them or assign them to its agents.
 
 | Skill id | Canonical path | Use when |
 |---|---|---|
-| planning/grilling | `planning/grilling/SKILL.md` | Sharpening a loose idea, plan, feature request or design with its owner in rounds of questions, each with a recommended answer, until no decision is left assumed. |
+| planning/brainstorming | `planning/brainstorming/SKILL.md` | Brainstorming an idea, feature or design, or asking to be grilled: explore intent and approaches, probe decisions in rounds with recommendations, and write an agreed design. Runs outside Factory. Skip fully specified, authorized changes. |
 
 ## Brand
 

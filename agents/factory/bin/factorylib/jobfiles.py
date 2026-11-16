@@ -3,6 +3,7 @@
 import fcntl
 import json
 import re
+from contextlib import contextmanager
 from datetime import datetime, timezone
 
 from .project import Refused, base_branch, config, jobs_dir, repo
@@ -56,13 +57,27 @@ def all_jobs(lock=True):
 
 
 def resolve(arg):
-    """A job by id (004-dark-mode) or by issue number (12)."""
+    """A job by id (004-dark-mode) or local sequence number (4)."""
     if arg.isdigit():
-        matches = [j for j in all_jobs(lock=False) if j["issue"] == int(arg)]
+        matches = [j for j in all_jobs(lock=False) if int(j["id"].split("-", 1)[0]) == int(arg)]
         if not matches:
-            raise Refused(f"no job for issue #{arg}")
+            raise Refused(f"no job numbered {arg}")
         return load(matches[0]["id"])
+    if not re.fullmatch(r"[0-9]+-[a-z0-9-]+", arg):
+        raise Refused(f"invalid job id {arg!r}")
     return load(arg)
+
+
+@contextmanager
+def dispatch_lock():
+    """Serialize queue allocation and slot admission before acquiring a job lock."""
+    jobs_dir().mkdir(parents=True, exist_ok=True)
+    with (jobs_dir() / ".dispatch.lock").open("w") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        try:
+            yield
+        finally:
+            fcntl.flock(lock, fcntl.LOCK_UN)
 
 
 def first_line(path):
@@ -113,8 +128,11 @@ def prompt_header(job, role=None):
         f"Worktree: {job['worktree']}.",
         f"Branch: {job['branch']}.",
         f"Base: origin/{base_branch()}.",
-        f"Issue: #{job['issue']}.",
+        f"Request: {job_dir(job['id']) / 'request.md'}.",
     ]
+    source = job.get("source") or {}
+    if source.get("key"):
+        parts.append(f"Source: {source['provider']} {source['key']}.")
     if job.get("pr"):
         parts.append(f"PR: #{job['pr']}.")
     parts += [

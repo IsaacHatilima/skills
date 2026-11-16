@@ -1,8 +1,8 @@
 """`job init`: the deterministic half of `/factory setup`.
 
 It writes the project's factory files from the skill's templates, never
-overwriting config.json or checks.sh, ignores the runtime paths in git, and
-creates the GitHub labels. Filling checks.sh and tailoring AGENTS.md is the
+overwriting config.json or checks.sh and ignores the runtime paths in git.
+Filling checks.sh and tailoring AGENTS.md is the
 orchestrator's half.
 """
 
@@ -11,14 +11,9 @@ import os
 import shutil
 from pathlib import Path
 
-from .project import TEMPLATES, Refused, factory_dir, repo, run
+from .project import TEMPLATES, factory_dir, repo, run
 
 GITIGNORE_LINES = ("/factory/jobs/", "/.worktrees/")
-LABELS = {
-    "queue": ("5319E7", "Build this with the software factory"),
-    "needs_info": ("FBCA04", "The factory asked the author a question"),
-    "needs_human": ("D93F0B", "The factory needs a human decision on the PR"),
-}
 PROJECT_CATALOG = ".ai/skills/catalog.md"
 USER_CATALOG = "~/.ai/skills/catalog.md"
 
@@ -80,20 +75,7 @@ def ignore_runtime_paths(report):
     report.append(f"{'updated' if missing else 'kept':<9} .gitignore ({', '.join(GITIGNORE_LINES)})")
 
 
-def create_labels(config, report):
-    ok = True
-    for key, (color, description) in LABELS.items():
-        name = config["labels"][key]
-        try:
-            run(["gh", "label", "create", name, "--color", color, "--description", description, "--force"])
-            report.append(f"label     {name}")
-        except Refused as e:
-            ok = False
-            report.append(f"FAILED    label {name}: {e}")
-    return ok
-
-
-def init(with_labels=True):
+def init():
     """Set the project up. Returns (report lines, whether everything succeeded)."""
     report = []
     config = write_files(report)
@@ -102,5 +84,4 @@ def init(with_labels=True):
     catalog = catalog if catalog.is_absolute() else repo() / catalog
     if not catalog.is_file():
         report.append(f"MISSING   skill catalog {catalog}: install the shared skills, or set skills.catalog")
-    ok = create_labels(config, report) if with_labels else True
-    return report, ok and catalog.is_file()
+    return report, catalog.is_file()

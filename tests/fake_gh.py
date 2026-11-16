@@ -40,43 +40,9 @@ def pick(obj, fields):
     return {k: obj[k] for k in fields.split(",")}
 
 
-def issue_view(state, number, o):
-    issue = state["issues"][number]
-    view = {**issue, "labels": [{"name": n} for n in issue["labels"]],
-            "author": {"login": issue["author"]}, "number": int(number)}
-    return pick(view, o["json"])
-
-
-def issue_edit(state, number, o):
-    labels = state["issues"][number]["labels"]
-    if "add-label" in o:
-        labels.append(o["add-label"])
-    if "remove-label" in o:
-        gone = set(o["remove-label"].split(","))
-        state["issues"][number]["labels"] = [n for n in labels if n not in gone]
-
-
 def add_comment(target, body):
     target.setdefault("comments", []).append(
         {"author": {"login": OPERATOR}, "body": body, "createdAt": f"2026-11-12T00:00:{len(target['comments']):02d}Z"})
-
-
-def issue(state, args):
-    action, rest = args[0], args[1:]
-    o = opts(rest)
-    if action == "view":
-        return issue_view(state, rest[0], o)
-    if action == "list":
-        found = [{"number": int(n), "title": i["title"]} for n, i in state["issues"].items()
-                 if i["state"] == "OPEN" and o["label"] in i["labels"]]
-        return found
-    if action == "comment":
-        add_comment(state["issues"][rest[0]], o["body"])
-    elif action == "edit":
-        issue_edit(state, rest[0], o)
-    else:
-        raise KeyError(action)
-    return None
 
 
 def pr_view(state, ref, o):
@@ -123,13 +89,8 @@ def main(args):
     state["calls"].append(args)
     if args[:2] == ["api", "user"]:
         out = OPERATOR
-    elif args[0] == "issue":
-        out = issue(state, args[1:])
     elif args[0] == "pr":
         out = pr(state, args[1:])
-    elif args[:2] == ["label", "create"]:
-        state["labels"][args[2]] = opts(args[3:])
-        out = None
     else:
         save(state)
         print(f"fake gh: unsupported {args}", file=sys.stderr)

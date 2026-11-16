@@ -395,9 +395,9 @@ def summary(root, skills, workflows, hosts, written, total):
     if "factory" in workflows:
         lines.append("Factory installed. In each project, run once:")
         if "claude" in hosts:
-            lines.append("  Claude Code:  /factory setup     then  /factory run")
+            lines.append("  Claude Code:  /factory setup     then  /factory <description>")
         if "codex" in hosts:
-            lines.append("  Codex:        $factory setup     then  $factory run   (Codex invokes skills with $, not /)")
+            lines.append("  Codex:        $factory setup     then  $factory <description>   (Codex invokes skills with $, not /)")
     return "\n".join(lines)
 
 
