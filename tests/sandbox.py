@@ -62,7 +62,6 @@ class Sandbox:
     def _init_gh(self):
         state = {"calls": [], "labels": {}, "prs": {}, "issues": {}}
         self.state_file.write_text(json.dumps(state))
-        self.add_issue(12, "Add a subtract function", ["factory"])
 
     def _init_skills(self):
         skills = self.repo / ".ai" / "skills"
@@ -97,12 +96,16 @@ class Sandbox:
     def gh_state(self):
         return json.loads(self.state_file.read_text())
 
-    def add_issue(self, number, title, labels):
-        state = self.gh_state()
-        state["issues"][str(number)] = {
-            "title": title, "body": "Please add it.", "author": "alice", "labels": labels,
-            "state": "OPEN", "url": f"https://example.test/issues/{number}", "comments": []}
-        self.state_file.write_text(json.dumps(state))
+    def create(self, title="Add a subtract function", description="Please add subtract.\n", *, start=True,
+               source=None, key=None, url=None):
+        args = ["create", title]
+        for flag, value in (("--source", source), ("--key", key), ("--url", url)):
+            if value is not None:
+                args += [flag, value]
+        job_id = self.job(*args, input=description).stdout.strip()
+        if start:
+            self.job("advance", job_id, "intake")
+        return job_id
 
     def setup_factory(self, checks="exit ${FAKE_CHECKS_EXIT:-0}\n", **config):
         self.job("init", "--no-labels")
@@ -147,7 +150,7 @@ class Sandbox:
         self.write(job_id, "spec.md", f"""
             # Subtract
 
-            > Issue #12: Add a subtract function
+            > Factory job {job_id}: Add a subtract function
 
             ## Summary
             - Spec.
@@ -186,7 +189,7 @@ class Sandbox:
             branch = self.job_json(job_id)["branch"]
             if open_pr and self.run("gh", "pr", "view", branch, check=False).returncode != 0:
                 self.run("gh", "pr", "create", "--draft", "--base", "main", "--head", branch,
-                         "--title", "Subtract", "--body", "Closes #12")
+                         "--title", "Subtract", "--body", f"Factory job: {job_id}")
         blocked = "\n## Blocked\nThe spec contradicts itself.\n" if status == "BLOCKED" else ""
         self.write(job_id, "build.md", f"STATUS: {status}\n\n# Build: Subtract\n" + blocked)
 
@@ -207,8 +210,8 @@ class Sandbox:
         self.git("commit", "-m", "docs: document Subtract", cwd=wt)
 
     def start_job(self, risk="low", surfaces="none"):
-        """Create a job for issue #12 and take it to the build stage."""
-        job_id = self.job("create", "12").stdout.strip()
+        """Create a local description-based job and take it to the build stage."""
+        job_id = self.create()
         self.intake(job_id, risk=risk, surfaces=surfaces)
         self.route(job_id)
         self.job("advance", job_id, "spec")

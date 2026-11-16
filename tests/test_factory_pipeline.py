@@ -58,15 +58,12 @@ class PipelineTest(unittest.TestCase):
 
     def test_create_refuses_without_a_skill_catalog(self):
         (self.s.repo / ".ai" / "skills" / "catalog.md").unlink()
-        self.refused("create", "12", contains="skill catalog")
-
-    def test_create_refuses_unlabeled_issue(self):
-        self.s.add_issue(13, "Unlabeled", [])
-        self.refused("create", "13", contains="isn't labeled factory")
+        res = self.s.job("create", "Subtract", input="Add subtract.\n", check=False)
+        self.assertIn("skill catalog", res.stderr)
 
     def test_spec_with_unreadable_skill_is_refused(self):
         s = self.s
-        job_id = s.job("create", "12").stdout.strip()
+        job_id = s.create()
         s.intake(job_id)
         s.route(job_id)
         s.job("advance", job_id, "spec")
@@ -75,7 +72,7 @@ class PipelineTest(unittest.TestCase):
 
     def test_blocked_spec_goes_to_a_person(self):
         s = self.s
-        job_id = s.job("create", "12").stdout.strip()
+        job_id = s.create()
         s.intake(job_id)
         s.route(job_id)
         s.job("advance", job_id, "spec")
@@ -83,11 +80,11 @@ class PipelineTest(unittest.TestCase):
         self.refused("advance", job_id, "build", contains="BLOCKED, not READY")
         s.job("advance", job_id, "needs-human")
         self.assertIn("nest/actions", (s.job_dir(job_id) / "decision.md").read_text())
-        self.assertIn("factory:needs-human", s.gh_state()["issues"]["12"]["labels"])
+        self.assertFalse(any(call[0] in {"issue", "label"} for call in s.gh_state()["calls"]))
 
     def test_feedback_on_a_blocked_spec_goes_back_to_the_spec_writer(self):
         s = self.s
-        job_id = s.job("create", "12").stdout.strip()
+        job_id = s.create()
         s.intake(job_id)
         s.route(job_id)
         s.job("advance", job_id, "spec")
@@ -98,7 +95,7 @@ class PipelineTest(unittest.TestCase):
         self.assertIn("feedback-1.md, back to the spec-writer", out)
         job = s.job_json(job_id)
         self.assertEqual((job["stage"], job["round"]), ("spec", 0))
-        self.assertNotIn("factory:needs-human", s.gh_state()["issues"]["12"]["labels"])
+        self.assertFalse(any(call[0] in {"issue", "label"} for call in s.gh_state()["calls"]))
         s.spec(job_id)
         s.job("advance", job_id, "build")
         self.assertEqual(s.job_json(job_id)["round"], 1)
@@ -177,8 +174,7 @@ class PipelineTest(unittest.TestCase):
         s.document(job_id, status="Not shipped")
         s.job("advance", job_id, "needs-human")
         self.assertIn("The spec contradicts itself.", (s.job_dir(job_id) / "decision.md").read_text())
-        comments = s.gh_state()["issues"]["12"]["comments"]
-        self.assertIn("needs a human", comments[-1]["body"])
+        self.assertFalse(any(call[0] in {"issue", "label"} for call in s.gh_state()["calls"]))
 
     def test_feedback_starts_a_new_round(self):
         s = self.s
@@ -204,12 +200,27 @@ class PipelineTest(unittest.TestCase):
         s.write(job_id, "decision.md", "APPROVE\n")
         self.refused("merge", job_id, contains="the approver changed the branch")
 
-    def test_queue_lists_new_issues_within_concurrency(self):
-        self.s.add_issue(13, "Add multiply", ["factory"])
-        path = self.s.repo / "factory" / "config.json"
+    def test_local_queue_respects_slots_and_preserves_waiting_jobs(self):
+        s = self.s
+        path = s.repo / "factory" / "config.json"
         path.write_text(json.dumps({**json.loads(path.read_text()), "concurrency": 1}))
-        rows = [line.split("\t") for line in self.s.job("queue").stdout.splitlines()]
-        self.assertEqual([r[:2] for r in rows], [["new", "12"], ["hold", "13"]])
+        first = s.create(start=False)
+        second = s.create("Add multiply", "Add multiplication.\n", start=False)
+        rows = [line.split("\t") for line in s.job("queue").stdout.splitlines()]
+        self.assertEqual([row[0] for row in rows], ["resume", "hold"])
+        self.assertIn(first, rows[0])
+        self.assertIn(second, rows[1])
+        s.job("advance", first, "intake")
+        self.refused("advance", second, "intake", contains="concurrency 1 reached")
+        self.assertEqual(s.job_json(second)["stage"], "queued")
+        s.intake(first, decision="NEEDS-INFO")
+        s.job("advance", first, "needs-info")
+        s.job("advance", second, "intake")
+        self.assertEqual(s.job_json(second)["stage"], "intake")
+        rows = [line.split("\t") for line in s.job("queue").stdout.splitlines()]
+        self.assertTrue(any(row[0] == "wait" and first in row for row in rows))
+        self.assertTrue(any(row[0] == "resume" and second in row for row in rows))
+        self.assertFalse(any(call[0] in {"issue", "label"} for call in s.gh_state()["calls"]))
 
 
 if __name__ == "__main__":

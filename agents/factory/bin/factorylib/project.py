@@ -78,10 +78,6 @@ def base_branch():
     return config()["base_branch"]
 
 
-def labels():
-    return config()["labels"]
-
-
 def expand(path):
     """A configured path: absolute, under ~, or relative to the main checkout."""
     p = Path(os.path.expanduser(str(path)))

@@ -1,4 +1,8 @@
 {
+  "planning": {
+    "description": "Standalone brainstorming with grill-me questioning, without the factory",
+    "skills": ["planning/*"]
+  },
   "basic": {
     "description": "The factory plus the skills every project uses: planning, code quality and review, TypeScript, and brand identity",
     "workflows": ["factory"],

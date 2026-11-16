@@ -10,11 +10,11 @@ git clone https://github.com/IsaacHatilima/skills.git ~/skills
 ~/skills/install web api              # install for your account (see Installing for one project)
 ```
 
-Then start a new Claude Code or Codex session: they load skills, agents and commands only when a session starts. The skills are ready to use. To use the [factory](agents/factory/README.md) in a project, run `/factory setup` there once (`$factory setup` in Codex), push the commit it makes, and give it work with `/factory run` or `/factory add a login page`.
+Then start a new Claude Code or Codex session: they load skills, agents and commands only when a session starts. The skills are ready to use. To use the [factory](agents/factory/README.md) in a project, run `/factory setup` there once (`$factory setup` in Codex), push the commit it makes, and give it work with `/factory add a login page`; `/factory run` resumes its local queue.
 
 ```text
 install                    installs bundles of skills, and the factory, for your account or a project
-bundles.json               the bundles: basic, web, laravel, api, all
+bundles.json               the bundles: planning, basic, web, laravel, api, all
 scripts/
   sync-brand-colours       refreshes brand/identity's colour library, generator and reference systems
 agents/
@@ -35,7 +35,7 @@ skills/
   quality/                 simplicity, review, thermo-nuclear-review, deslop, security-review
   typescript/              best-practices
   brand/                   identity: brand.py, the colour library and generator, reference systems
-  planning/                grilling (Matt Pocock's grill-me)
+  planning/                brainstorming with Matt Pocock's grill-me questioning built in
   javascript/              domain-driver CLI guidance
 tests/                     python3 -m unittest discover -s tests
 ```
@@ -43,9 +43,9 @@ tests/                     python3 -m unittest discover -s tests
 
 ## Agent workflows
 
-[Factory](agents/factory/README.md) builds GitHub issues labeled `factory` into reviewed, documented pull requests: intake, specification, implementation, a scripted gate, routed reviews, documentation, and approval. It is adapted from the ZazenCodes software factory v2 and, like the original, licensed under the [GPLv3](agents/factory/LICENSE).
+[Factory](agents/factory/README.md) builds descriptions into reviewed, documented pull requests: intake, specification, implementation, a scripted gate, routed reviews, documentation, and approval. It is adapted from the ZazenCodes software factory v2 and, like the original, licensed under the [GPLv3](agents/factory/LICENSE).
 
-After [installing it](#installing), run `/factory setup` once in a project, then `/factory run` in Claude Code. Codex invokes skills with `$`, so there it is `$factory setup` and `$factory run`. `/factory add a login page` files that request as an issue and builds it. `AGENT.md` owns the workflow; `SKILL.md` adapts it to hosts that expose commands through skills. It is outside the shared capability library.
+After [installing it](#installing), run `/factory setup` once in a project, then `/factory <description>` in Claude Code. Codex invokes skills with `$`, so there it is `$factory setup` and `$factory <description>`. `/factory add a login page` creates a local job and builds it; `/factory run` resumes queued jobs. Optional `/factory mitarbo <task-key>` reads one explicitly named task through the host's connected Mitarbo tool. Plain descriptions need no task-service connection. GitHub remains the branch and pull-request host; Factory creates no issues or labels. `AGENT.md` owns the workflow; `SKILL.md` adapts it to hosts that expose commands through skills. It is outside the shared capability library.
 
 Add future workflows under `agents/<name>/`, with an `AGENT.md` entrypoint and the roles or command adapter they need. An E2E or security-testing workflow can work directly on existing code and reuse the shared library.
 
@@ -63,7 +63,7 @@ The [catalog](skills/catalog.md) lists reusable capabilities and path-resolution
 | `skills/frontend/` | Stack-agnostic: [app-shell](skills/frontend/app-shell/SKILL.md), [overlays](skills/frontend/overlays/SKILL.md), [data-display](skills/frontend/data-display/SKILL.md) |
 | `skills/quality/` | Stack-agnostic: [simplicity](skills/quality/simplicity/SKILL.md), [review](skills/quality/review/SKILL.md), [thermo-nuclear-review](skills/quality/thermo-nuclear-review/SKILL.md) and [deslop](skills/quality/deslop/SKILL.md) (from Cursor), [security-review](skills/quality/security-review/SKILL.md) (with Cloudflare's attack-class checklists) |
 | `skills/typescript/` | [best-practices](skills/typescript/best-practices/SKILL.md) (from pstack): unions, brands, boundary parsing, no casts |
-| `skills/planning/` | [grilling](skills/planning/grilling/SKILL.md) (Matt Pocock's grill-me): rounds of questions with recommended answers until a plan has no open decisions |
+| `skills/planning/` | [brainstorming](skills/planning/brainstorming/SKILL.md): Superpowers' discovery and design process combined with Matt Pocock's grill-me decision tree, probing questions and recommended answers, as one standalone skill outside Factory |
 | `skills/brand/` | [identity](skills/brand/identity/SKILL.md): composes a brand's colour system and guidelines from the [brand-colours](https://github.com/IsaacHatilima/brand-colours) library, then theming, typography, logo, BRAND.md |
 
 Factory uses its role instructions for discovery, verification, and documentation, and selects additional capabilities from the installed catalog.
@@ -72,12 +72,17 @@ Use `skills/<group>/<skill-name>/SKILL.md` with lowercase, hyphenated names and 
 
 Each stack folder is self-contained so it can ship on its own. Its `actions` skill covers only that framework; stack-agnostic rules live in `skills/quality/`.
 
+Brainstorming combines Superpowers 7.0.2 and Matt Pocock's grill-me in one skill, with both authors credited in its [MIT license](skills/planning/brainstorming/LICENSE). It explores your idea, grills you in rounds about decisions and assumptions, compares approaches, and writes the agreed design. Grilling now lives inside brainstorming instead of a separate skill. It uses the host's available visual tools and needs no Superpowers plugin or Factory setup.
+
+The `all` bundle includes it, as do `basic` and the bundles that include `basic`. Install just this skill with `./install planning`. Its installed name is `planning-brainstorming`: ask your agent, "Use planning-brainstorming to brainstorm this idea and grill me about it." Factory does not run this conversation; you can hand the finished design to any implementation workflow later.
+
 ## Installing
 
 On a new machine, clone this repository and install the bundles you use. It needs `git` and `python3` 3.10 or later. Everything goes into your home directory, for every project, unless you pass `--project`.
 
 ```bash
 ./install --list                      # the bundles and what they hold
+./install planning                    # brainstorming with grill-me questioning; no factory
 ./install basic                       # factory, planning, quality, TypeScript, brand
 ./install web                         # basic plus frontend, domain-driver, Next, TanStack Start (Vite apps too)
 ./install web api                     # several bundles install their union, such as a Vite or Next app with a Nest API
@@ -107,7 +112,7 @@ Existing files that differ are left alone unless you pass `--force`. Pull this r
 
 - **Start a new session.** Claude Code and Codex read `CLAUDE.md`, `AGENTS.md`, agents and commands when a session starts, so an open session won't see the install.
 - **Skills need nothing else.** Agents read the block in the instruction files and open the skill a task needs.
-- **The factory needs `/factory setup` once per project**, run from either tool. The project must be on GitHub with `gh` signed in. Setup writes `factory/config.json`, `factory/checks.sh` and the dashboard, creates the labels, adds a factory section to `AGENTS.md`, checks that `checks.sh` passes, and commits. Push that commit before the first `/factory run`, because jobs branch from `origin/<base>`.
+- **The factory needs `/factory setup` once per project**, run from either tool. The project must be on GitHub with `gh` signed in. Setup writes `factory/config.json`, `factory/checks.sh` and the dashboard, adds a factory section to `AGENTS.md`, checks that `checks.sh` passes, and commits. Push that commit before the first `/factory run`, because jobs branch from `origin/<base>`.
 - **The factory's UI and UX reviewers drive a browser.** Unless a project's `AGENTS.md` names another browser workflow, install [agent-browser](https://github.com/vercel-labs/agent-browser) once per machine: `npm install -g agent-browser && agent-browser install`. Without it they can only read the code.
 - **Claude Code and Codex share it.** One install covers both, and setup's files serve both. Run the factory from one of them at a time per project, because two orchestrators can pick up the same job. The dashboard counts both tools' subagents: tokens always, and dollars for models listed in `prices_usd_per_mtok` in `factory/config.json`. Add your Codex models' prices there to see their cost.
 - **Worktrees see only what their branch has.** A project install exists only on branches that contain its commit, so a thread working in another worktree won't find it. When you work in many worktrees, as T3 Code does, install for your account instead.

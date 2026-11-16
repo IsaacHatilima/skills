@@ -2,28 +2,33 @@
 """The only writer of factory/jobs/<job-id>/job.json.
 
 Every stage change goes through `advance`, which checks the files that justify
-it and refuses anything else. GitHub side effects that belong to a transition
-(labels, comments, the worktree, the merge) happen here too, so the
+it and refuses anything else. Branch and PR effects that belong to a transition
+(the worktree, PR comments and the merge) happen here too, so the
 orchestrator never improvises them.
 
 Usage:
-  job init [--no-labels]         set up factory/ in this project (never overwrites config.json or checks.sh)
-  job queue                      what /factory run should do with each labeled issue
-  job create <issue>             new job for an open `factory` issue; prints the job id
+  job init                      set up factory/ (never overwrites config.json or checks.sh)
+  job queue                     local jobs to start, resume or hand back to a person
+  job create <title> [--source <provider>] [--key <key>] [--url <url>]
+                                queue a local job with its exact description on stdin
   job header <job> [<role>]      the line every agent prompt starts with; role builder|ux|ui adds its port
   job advance <job> <stage>      move a job to <stage>, or refuse
   job merge <job>                APPROVE → sync with the base branch, gate, merge the PR
+  job answer <job>               needs-info → intake, with the operator's answer on stdin
   job feedback <job>             needs-human → build (or spec, if blocked there), with your feedback (stdin) as feedback-<k>.md
-  job reject <job>               needs-info or needs-human → rejected, with your reason (stdin) as rejection.md
+  job reject <job>               queued or waiting → rejected, with your reason (stdin) as rejection.md
   job agents <job> <json>        record the routed reviewers (called by bin/route)
   job sync <job>                 refresh reviews, gate and cost from the job's files
-  job summary [<job>...]         table of jobs: issue, stage, PR, docs, cost, time
+  job summary [<job>...]         table of jobs: source, stage, PR, docs, cost, time
 
-<job> is a job id (004-dark-mode) or an issue number (12).
+<job> is a job id (004-dark-mode) or its local sequence number (4).
+Task services are optional: source metadata records context already read by the
+invoking agent. These scripts never read or write GitHub issues or task services.
 
 Adapted from the ZazenCodes software factory v2 (GPLv3); see ../LICENSE.
 """
 
+import argparse
 import sys
 
 sys.dont_write_bytecode = True
@@ -34,12 +39,12 @@ import subprocess  # noqa: E402
 from datetime import datetime, timezone  # noqa: E402
 from pathlib import Path  # noqa: E402
 
-from factorylib import github  # noqa: E402
+from factorylib import github, requests  # noqa: E402
 from factorylib.cost import short_tokens  # noqa: E402
 from factorylib.jobfiles import (  # noqa: E402
-    all_jobs, job_dir, now, prompt_header, resolve, save)
+    all_jobs, dispatch_lock, job_dir, now, prompt_header, resolve, save)
 from factorylib.project import (  # noqa: E402
-    SELECTION, Refused, base_branch, config, die, expand, jobs_dir, labels, repo, require, run)
+    SELECTION, Refused, base_branch, config, die, expand, jobs_dir, repo, require, run)
 from factorylib.setup import init  # noqa: E402
 from factorylib.transitions import (  # noqa: E402
     TERMINAL, WAITING, advance, escalate, git, require_slot, running, sync)
@@ -49,7 +54,7 @@ BIN = Path(__file__).resolve().parent
 
 def slugify(title):
     words = re.findall(r"[a-z0-9]+", title.lower())[:4]
-    return "-".join(words) or "issue"
+    return "-".join(words) or "request"
 
 
 def resolve_skills():
@@ -64,86 +69,73 @@ def resolve_skills():
     return {"catalog": str(catalog), "selection": str(SELECTION), "roots": unique}
 
 
-def cmd_create(number):
-    existing = [j for j in all_jobs(lock=False) if j["issue"] == int(number)]
-    require(not existing, f"issue #{number} already has job {existing[0]['id']} ({existing[0]['stage']})"
-            if existing else "")
-    require_slot(None)
+def cmd_create(args):
+    parser = argparse.ArgumentParser(prog="job create")
+    parser.add_argument("title")
+    parser.add_argument("--source")
+    parser.add_argument("--key")
+    parser.add_argument("--url")
+    parsed = parser.parse_args(args)
+    text = sys.stdin.read()
+    require(parsed.title.strip() and not any(c in parsed.title for c in "\n\r\t"),
+            "the job title must be one nonblank line")
+    require(text.strip(), "no request description on stdin")
+    require(not (parsed.key or parsed.url) or parsed.source, "--key and --url require --source")
+    source = None
+    if parsed.source:
+        require(re.fullmatch(r"[a-z][a-z0-9-]*", parsed.source), "invalid source provider")
+        for value in (parsed.key, parsed.url):
+            require(value is None or (value.strip() and not any(ord(c) < 32 for c in value)),
+                    "source metadata must be nonblank single-line text")
+        require(not parsed.url or parsed.url.startswith(("https://", "http://")),
+                "source URL must use http or https")
+        source = {"provider": parsed.source, "key": parsed.key, "url": parsed.url}
     skills = resolve_skills()
-    issue = github.fetch_issue(number)
-    require(issue["state"] == "OPEN", f"issue #{number} is {issue['state'].lower()}")
-    require(labels()["queue"] in {lbl["name"] for lbl in issue["labels"]},
-            f"issue #{number} isn't labeled {labels()['queue']}")
     jobs_dir().mkdir(parents=True, exist_ok=True)
-    numbers = [int(p.name.split("-")[0]) for p in jobs_dir().iterdir() if p.name[:3].isdigit()]
-    job_id = f"{max(numbers, default=0) + 1:03d}-{slugify(issue['title'])}"
-    try:
-        job_dir(job_id).mkdir()
-    except FileExistsError:
-        raise Refused(f"another session just took job {job_id}; run `job create {number}` again") from None
+    numbers = [int(p.name.split("-", 1)[0]) for p in jobs_dir().iterdir()
+               if p.is_dir() and p.name.split("-", 1)[0].isdigit()]
+    job_id = f"{max(numbers, default=0) + 1:03d}-{slugify(parsed.title)}"
+    job_dir(job_id).mkdir()
     job = {
-        "id": job_id, "issue": issue["number"], "title": issue["title"], "issue_url": issue["url"],
+        "id": job_id, "title": parsed.title.strip(), "source": source,
         "pr": None, "pr_url": None,
         "branch": f"factory/{job_id}",
         "worktree": str(repo() / ".worktrees" / job_id),
-        "stage": "intake", "round": 0, "round_limit": config()["max_rounds"], "round_base": None,
+        "stage": "queued", "round": 0, "round_limit": config()["max_rounds"], "round_base": None,
         "intake": None, "agents": None, "gate": None, "reviews": {},
         "outcome": None, "escalation": None, "doc": None, "doc_base": None, "doc_head": None,
         "skills": skills, "cost_usd": 0.0, "tokens": 0, "started": now(), "ended": None,
     }
-    github.write_issue_md(job)
+    requests.write_request(job, text)
     save(job)
     print(job_id)
 
 
-def queue_row(issue, job):
-    n = issue["number"]
-    if not job:
-        return "new", ("new", n, "-", "-", issue["title"])
-    stage = job["stage"]
-    if stage == "needs-info":
-        if github.replied_since_question(github.fetch_issue(n)):
-            return "replied", ("resume", n, job["id"], stage, "author replied")
-        return "other", ("wait", n, job["id"], stage, "waiting for the author")
-    if stage == "needs-human":
-        note = f"merge PR #{job['pr']}, or give feedback" if job["pr"] else "give feedback"
-        return "other", ("wait", n, job["id"], stage, note)
-    if stage == "rejected":
-        return "other", ("skip", n, job["id"], stage, f"rejected; delete factory/jobs/{job['id']} to retry")
-    if stage == "merged":
-        return "other", ("skip", n, job["id"], stage, "merged")
-    return "running", ("resume", n, job["id"], stage, f"round {job['round']}")
-
-
 def cmd_queue():
-    """Rows in the order to start them. `resume` and `new` rows fit in the
-    concurrency slots; the rest show as `hold` until a running job finishes."""
-    jobs = {j["issue"]: j for j in all_jobs()}
-    # A job is done once its PR is merged on GitHub, which also closes the issue.
-    for j in jobs.values():
+    """Local queue only. New work is explicitly submitted with `job create`."""
+    jobs = all_jobs()
+    for j in jobs:
         if j["stage"] not in TERMINAL and j["pr"] and github.pr_state(j) == "MERGED":
             save(advance(sync(j), "merged"))
-    issues = github.gh_json("issue", "list", "--label", labels()["queue"], "--state", "open",
-                            "--limit", "200", "--json", "number,title")
-    open_numbers = {i["number"] for i in issues}
-    groups = {"running": [], "replied": [], "new": [], "other": []}
-    for issue in sorted(issues, key=lambda i: i["number"]):
-        kind, row = queue_row(issue, jobs.get(issue["number"]))
-        groups[kind].append(row)
-    for n, j in sorted(jobs.items()):
-        if n not in open_numbers and j["stage"] not in TERMINAL | WAITING:
-            groups["other"].append(("skip", n, j["id"], j["stage"],
-                                    f"issue is closed or no longer labeled {labels()['queue']}"))
     limit = config()["concurrency"]
-    slots = limit - len(running(jobs.values()))
-    rows = list(groups["running"])
-    for row in groups["replied"] + groups["new"]:
-        if slots > 0:
-            rows.append(row)
-            slots -= 1
+    slots = limit - len(running(jobs))
+    rows, waiting = [], []
+    for j in jobs:
+        stage = j["stage"]
+        if stage in TERMINAL:
+            continue
+        if stage == "queued":
+            action = "resume" if slots > 0 else "hold"
+            note = "start intake" if slots > 0 else f"concurrency {limit} reached"
+            slots -= int(slots > 0)
+            waiting.append((action, j["id"], stage, note))
+        elif stage in WAITING:
+            note = "answer the intake questions with job answer" if stage == "needs-info" else (
+                f"merge PR #{j['pr']}, or give feedback" if j["pr"] else "give feedback")
+            waiting.append(("wait", j["id"], stage, note))
         else:
-            rows.append(("hold",) + row[1:4] + (f"concurrency {limit} reached",))
-    for row in rows + groups["other"]:
+            rows.append(("resume", j["id"], stage, f"round {j['round']}"))
+    for row in rows + waiting:
         print("\t".join(str(c) for c in row))
 
 
@@ -188,10 +180,11 @@ def cmd_merge(job):
 def cmd_feedback(job, text):
     require(job["stage"] == "needs-human", f"{job['id']} is in {job['stage']}, not needs-human")
     require(text.strip(), "no feedback on stdin")
+    require_slot(job["id"])
     d = job_dir(job["id"])
     k = len(list(d.glob("feedback-*.md"))) + 1
     (d / f"feedback-{k}.md").write_text(
-        f"# Feedback {k}\n\nFrom @{github.operator()} after the job escalated.\n\n{text.strip()}\n")
+        f"# Feedback {k}\n\nFrom the operator after the job escalated.\n\n{text.strip()}\n")
     # A job blocked at its spec was never built: its feedback goes to the spec-writer.
     stage = "spec" if job["round"] == 0 else "build"
     save(advance(sync(job), stage))
@@ -200,12 +193,22 @@ def cmd_feedback(job, text):
 
 
 def cmd_reject(job, text):
-    require(job["stage"] in WAITING, f"{job['id']} is in {job['stage']}, not needs-info or needs-human")
+    require(job["stage"] in WAITING | {"queued"},
+            f"{job['id']} is in {job['stage']}, not queued, needs-info or needs-human")
     require(text.strip(), "no reason on stdin")
     (job_dir(job["id"]) / "rejection.md").write_text(
-        f"REJECTED\n\nBy @{github.operator()} while the job was {job['stage']}.\n\n{text.strip()}\n")
+        f"REJECTED\n\nBy the operator while the job was {job['stage']}.\n\n{text.strip()}\n")
     save(advance(sync(job), "rejected"))
     print(f"{job['id']}: rejected")
+
+
+def cmd_answer(job, text):
+    require(job["stage"] == "needs-info", f"{job['id']} is in {job['stage']}, not needs-info")
+    require(text.strip(), "no answer on stdin")
+    require_slot(job["id"])
+    requests.append_answer(job, text)
+    save(advance(sync(job), "intake"))
+    print(f"{job['id']}: answer recorded, intake")
 
 
 def cmd_agents(job, spec):
@@ -227,10 +230,12 @@ def elapsed(job):
 
 def cmd_summary(args):
     jobs = [resolve(a) for a in args] if args else all_jobs()
-    rows = [("job", "issue", "stage", "round", "pr", "docs", "cost", "tokens", "time")]
+    rows = [("job", "source", "stage", "round", "pr", "docs", "cost", "tokens", "time")]
     for j in jobs:
         sync(j)  # for display only; the orchestrator owns the saved state
-        rows.append((j["id"], f"#{j['issue']}", j["stage"], str(j["round"]),
+        source = j.get("source") or {}
+        origin = source.get("key") or source.get("provider") or "description"
+        rows.append((j["id"], origin, j["stage"], str(j["round"]),
                      f"#{j['pr']}" if j["pr"] else "-", j.get("doc") or "-",
                      f"${j['cost_usd']:.2f}", short_tokens(j.get("tokens", 0)), elapsed(j)))
     widths = [max(len(r[i]) for r in rows) for i in range(len(rows[0]))]
@@ -242,14 +247,16 @@ def cmd_summary(args):
 
 def cmd_init(args):
     require(args in ([], ["--no-labels"]), "usage: job init [--no-labels]")
-    report, ok = init(with_labels=not args)
+    report, ok = init()
     print("\n".join(report))
     if not ok:
         sys.exit(1)
 
 
 def cmd_advance(arg, stage):
-    job = advance(sync(resolve(arg)), stage)
+    job = resolve(arg)
+    requests.ensure_request(job)
+    job = advance(sync(job), stage)
     save(sync(job))
     print(f"{job['id']}: {job['stage']} (round {job['round']})")
 
@@ -261,14 +268,21 @@ def cmd_sync(arg):
     print(f"{job['id']}: {job['stage']} round {job['round']} gate {job['gate'] or '-'} {reviews}".rstrip())
 
 
+def cmd_header(arg, role=None):
+    job = resolve(arg)
+    requests.ensure_request(job)
+    print(prompt_header(job, role))
+
+
 COMMANDS = {
     ("init", None): lambda a: cmd_init(a),
     ("queue", 0): lambda a: cmd_queue(),
-    ("create", 1): lambda a: cmd_create(a[0]) if a[0].isdigit() else die("job", "usage: job create <issue>"),
-    ("header", 1): lambda a: print(prompt_header(resolve(a[0]))),
-    ("header", 2): lambda a: print(prompt_header(resolve(a[0]), a[1])),
+    ("create", None): cmd_create,
+    ("header", 1): lambda a: cmd_header(a[0]),
+    ("header", 2): lambda a: cmd_header(*a),
     ("advance", 2): lambda a: cmd_advance(*a),
     ("merge", 1): lambda a: cmd_merge(resolve(a[0])),
+    ("answer", 1): lambda a: cmd_answer(resolve(a[0]), sys.stdin.read()),
     ("feedback", 1): lambda a: cmd_feedback(resolve(a[0]), sys.stdin.read()),
     ("reject", 1): lambda a: cmd_reject(resolve(a[0]), sys.stdin.read()),
     ("agents", 2): lambda a: cmd_agents(sync(resolve(a[0])), a[1]),
@@ -286,7 +300,11 @@ def main(argv):
     if not handler:
         die("job", f"bad arguments: {' '.join(argv)}\n\n{__doc__.strip()}")
     try:
-        handler(args)
+        if cmd in {"create", "queue", "advance", "answer", "feedback"}:
+            with dispatch_lock():
+                handler(args)
+        else:
+            handler(args)
     except Refused as e:
         die("job", str(e))
 

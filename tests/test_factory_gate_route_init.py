@@ -74,7 +74,7 @@ class RouteTest(unittest.TestCase):
     def setUp(self):
         self.s = Sandbox()
         self.s.setup_factory()
-        self.job_id = self.s.job("create", "12").stdout.strip()
+        self.job_id = self.s.create()
 
     def tearDown(self):
         self.s.cleanup()
@@ -118,9 +118,11 @@ class InitTest(unittest.TestCase):
         self.assertEqual(s.git("check-ignore", "factory/jobs/x", ".worktrees/x").splitlines(),
                          ["factory/jobs/x", ".worktrees/x"])
 
-    def test_init_creates_labels(self):
+    def test_init_needs_no_issue_or_label_access(self):
         self.s.job("init")
-        self.assertEqual(sorted(self.s.gh_state()["labels"]), ["factory", "factory:needs-human", "factory:needs-info"])
+        self.assertEqual(self.s.gh_state()["calls"], [])
+        config = json.loads((self.s.repo / "factory/config.json").read_text())
+        self.assertNotIn("labels", config)
 
     def test_init_reports_a_missing_catalog(self):
         (self.s.repo / ".ai" / "skills" / "catalog.md").unlink()

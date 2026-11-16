@@ -94,6 +94,28 @@ class InstallTest(unittest.TestCase):
             self.assertTrue((self.skills / native / "SKILL.md").is_file(), native)
         self.assertTrue((self.skills / "laravel-api-responses/templates/ApiResponse.php").is_file())
 
+    def test_planning_installs_standalone_and_is_also_in_all(self):
+        self.install("planning", "--project", str(self.project))
+        installed = {p.parent.name for p in self.skills.glob("*/SKILL.md")}
+        self.assertEqual(installed, {"planning-brainstorming"})
+        skill = self.skills / "planning-brainstorming"
+        self.assertEqual(claude_frontmatter(skill / "SKILL.md")["name"], "planning-brainstorming")
+        self.assertEqual((skill / "LICENSE").read_bytes(),
+                         (ROOT / "skills/planning/brainstorming/LICENSE").read_bytes())
+        for name in ("AGENTS.md", "CLAUDE.md"):
+            instructions = (self.project / name).read_text()
+            self.assertIn("| `planning-brainstorming` |", instructions)
+            self.assertNotIn(".ai/skills/factory/AGENT.md", instructions)
+        for rel in (".ai/skills/factory", ".claude/agents", ".codex/agents",
+                    ".claude/skills/factory", ".agents/skills/factory"):
+            self.assertFalse((self.project / rel).exists(), rel)
+
+        before = (skill / "SKILL.md").read_bytes()
+        self.install("all", "--project", str(self.project))
+        self.assertEqual((skill / "SKILL.md").read_bytes(), before)
+        self.assertTrue((self.skills / "factory/AGENT.md").is_file())
+        self.assertFalse((self.skills / "planning-grilling").exists())
+
     # ---- agents
 
     def test_agents_keep_their_models_effort_and_tools(self):
@@ -178,7 +200,7 @@ class InstallTest(unittest.TestCase):
 
     def test_list_shows_the_bundles(self):
         out = self.install("--list").stdout
-        for name in ("basic", "web", "laravel", "api", "all"):
+        for name in ("planning", "basic", "web", "laravel", "api", "all"):
             self.assertRegex(out, rf"(?m)^  {name}\s+\d+ skills")
 
     def test_a_bundle_is_required(self):
@@ -189,7 +211,7 @@ class InstallTest(unittest.TestCase):
     def test_unknown_bundle_is_refused(self):
         res = self.install("rails", "--project", str(self.project), check=False)
         self.assertEqual(res.returncode, 1)
-        self.assertIn("unknown bundle 'rails'; have: all, api, basic, laravel, web", res.stderr)
+        self.assertIn("unknown bundle 'rails'; have: all, api, basic, laravel, planning, web", res.stderr)
 
 
 if __name__ == "__main__":

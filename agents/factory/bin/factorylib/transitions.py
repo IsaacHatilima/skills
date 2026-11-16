@@ -1,7 +1,7 @@
 """Stage changes. `advance` checks the files that justify a move and refuses anything else.
 
-GitHub side effects that belong to a transition (labels, comments, the
-worktree, pushing the documentation) happen here too, so the orchestrator
+Branch and PR effects that belong to a transition (the worktree, PR
+comments, pushing the documentation) happen here too, so the orchestrator
 never improvises them. Each move out of an agent's stage also checks that the
 agent stayed in its lane: reviewers and the approver change nothing, the
 builder never touches Documentation/, and the documenter touches nothing else.
@@ -13,10 +13,11 @@ from pathlib import Path
 from . import github
 from .cost import usage
 from .jobfiles import all_jobs, first_line, header, job_dir, now, reviewers, round_dir, section
-from .project import base_branch, config, labels, require, run
+from .project import base_branch, config, require, run
 from .spec import check_skills, check_spec, doc_page, doc_status
 
 TRANSITIONS = {
+    "queued": {"intake", "rejected"},
     "intake": {"needs-info", "rejected", "spec"},
     "needs-info": {"intake", "rejected"},
     "spec": {"build", "needs-human"},
@@ -102,7 +103,7 @@ def sync(job):
 
 def running(jobs):
     """Jobs holding a concurrency slot: every job not finished or waiting."""
-    return [j for j in jobs if j["stage"] not in TERMINAL | WAITING]
+    return [j for j in jobs if j["stage"] not in TERMINAL | WAITING | {"queued"}]
 
 
 def require_slot(job_id):
@@ -137,26 +138,18 @@ def start_document(job, outcome, why=None):
 # ---- Leaving each stage ------------------------------------------------------
 
 
+def from_queued(job, stage):
+    require_slot(job["id"])
+
+
 def from_intake(job, stage):
     d = job_dir(job["id"])
     decision = header(d / "intake.md").get("DECISION") if (d / "intake.md").exists() else None
     want = {"needs-info": "NEEDS-INFO", "rejected": "REJECT", "spec": "ACCEPT"}[stage]
     require(decision == want, f"intake.md says DECISION: {decision}, not {want}")
-    title = f"### Factory intake: {decision}"
     if stage == "spec":
         require(job["agents"], "route the job first: bin/route " + job["id"])
-        i = job["intake"]
-        title += f" (risk {i['risk']}, surfaces: {', '.join(i['surfaces']) or 'none'})"
-    body = "\n".join((d / "intake.md").read_text().split("\n\n", 1)[1:]).strip()
-    # Retryable steps first and the comment last, so a failed move can run again
-    # without a second comment or a half-made worktree.
-    if stage == "spec":
         ensure_worktree(job)
-    github.comment("issue", job["issue"], f"{title}\n\n{body}")
-    if stage == "needs-info":
-        github.label("issue", job["issue"], add=labels()["needs_info"])
-    elif stage == "rejected":
-        github.label("issue", job["issue"], remove=labels()["queue"])
 
 
 def ensure_worktree(job):
@@ -175,8 +168,9 @@ def ensure_worktree(job):
 
 def from_needs_info(job, stage):
     require_slot(job["id"])
-    github.write_issue_md(job)
-    github.label("issue", job["issue"], remove=labels()["needs_info"])
+    require(job.get("answer_count", 0) > job.get("answered_count", 0),
+            "use `job answer` to answer the intake questions before resuming")
+    job["answered_count"] = job["answer_count"]
     d = job_dir(job["id"])
     if (d / "intake.md").exists():
         k = len(list(d.glob("intake-*.md"))) + 1
@@ -303,6 +297,7 @@ def from_merging(job, stage):
 
 
 def from_needs_human(job, stage):
+    require_slot(job["id"])
     d = job_dir(job["id"])
     feedback = sorted(d.glob("feedback-*.md"))
     decision = d / "decision.md"
@@ -314,11 +309,10 @@ def from_needs_human(job, stage):
     job["round_limit"] = job["round"] + config()["max_rounds"]
     if stage == "build":
         next_round(job)
-    github.label("issue", job["issue"], remove=labels()["needs_human"])
 
 
 LEAVE = {
-    "intake": from_intake, "needs-info": from_needs_info, "spec": from_spec,
+    "queued": from_queued, "intake": from_intake, "needs-info": from_needs_info, "spec": from_spec,
     "build": from_build, "gate": from_gate, "review": from_review,
     "document": from_document, "approve": from_approve, "merging": from_merging,
     "needs-human": from_needs_human,
@@ -330,17 +324,11 @@ LEAVE = {
 
 def to_merged(job, old):
     require(job["pr"] and github.pr_state(job) == "MERGED", "the PR isn't merged")
-    if old == "needs-human":
-        github.label("issue", job["issue"], remove=labels()["needs_human"])
 
 
 def to_rejected_from_waiting(job, old):
     d = job_dir(job["id"])
     require((d / "rejection.md").exists(), "use `job reject` to reject a waiting job")
-    reason = (d / "rejection.md").read_text().split("\n", 1)[1].strip()
-    github.comment("issue", job["issue"], f"### Factory: rejected\n\n{reason}")
-    waiting = labels()["needs_info"] if old == "needs-info" else labels()["needs_human"]
-    github.label("issue", job["issue"], remove=f"{labels()['queue']},{waiting}")
     if job["pr"]:
         github.gh("pr", "close", str(job["pr"]))
         run(["git", "push", "origin", "--delete", job["branch"]], check=False)
@@ -355,9 +343,6 @@ def announce_needs_human(job):
         if github.pr_is_draft(job):
             github.gh("pr", "ready", str(job["pr"]))
         github.comment("pr", job["pr"], body)
-    else:
-        github.comment("issue", job["issue"], body)
-    github.label("issue", job["issue"], add=labels()["needs_human"])
 
 
 def advance(job, stage):
@@ -366,7 +351,7 @@ def advance(job, stage):
     require(legal, f"{job['id']}: {old} → {stage} is not a legal transition")
     if stage == "merged":
         to_merged(job, old)
-    elif stage == "rejected" and old in WAITING:
+    elif stage == "rejected" and old in WAITING | {"queued"}:
         to_rejected_from_waiting(job, old)
     else:
         LEAVE[old](job, stage)

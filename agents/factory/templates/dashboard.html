@@ -288,7 +288,7 @@
 <script>
 const POLL_MS = 2000
 const COLUMNS = [
-  { label: 'Intake', who: 'intake', stages: ['intake', 'needs-info'] },
+  { label: 'Intake', who: 'queue · intake', stages: ['queued', 'intake', 'needs-info'] },
   { label: 'Spec', who: 'spec-writer', stages: ['spec'] },
   { label: 'Build', who: 'builder · gate', stages: ['build', 'gate'] },
   { label: 'Review', who: 'routed reviewers', stages: ['review'] },
@@ -380,12 +380,12 @@ function tokens(n) {
   return `${count} tokens`
 }
 
-// The example jobs keep their issue and PR numbers but have no URLs.
 const link = (url, text) =>
   url ? `<a href="${esc(url)}" target="_blank" rel="noopener">${text}</a>` : `<span>${text}</span>`
 
 function links(job) {
-  const out = [link(job.issue_url, `issue #${job.issue}`)]
+  const source = job.source
+  const out = source ? [link(source.url, esc(source.key || source.provider))] : []
   if (job.pr) out.push(link(job.pr_url, `PR #${job.pr}`))
   return out.join('')
 }
@@ -396,7 +396,7 @@ function card(job, rounds) {
   const done = job.stage === 'merged' || job.stage === 'rejected'
   const [num, ...slug] = job.id.split('-')
   const flag = human ? '<span class="flag">your call</span>'
-    : job.stage === 'needs-info' ? '<span class="flag wait">asked author</span>'
+    : job.stage === 'needs-info' ? '<span class="flag wait">awaiting answer</span>'
     : job.stage === 'rejected' ? '<span class="flag wait">rejected</span>' : ''
   const risk = job.intake?.risk
   const meta = [
@@ -492,7 +492,7 @@ async function listFiles(dir) {
   return out
 }
 
-const ORDER = ['issue.md', 'intake.md', 'spec.md', 'build.md', 'decision.md', 'rejection.md']
+const ORDER = ['request.md', 'issue.md', 'intake.md', 'spec.md', 'build.md', 'decision.md', 'rejection.md']
 const ROUND_ORDER = ['checks', 'review-code', 'review-security', 'review-ux', 'review-ui', 'merge-checks']
 
 function fileRank(path) {

@@ -1,6 +1,6 @@
 ---
 name: factory
-description: Run the software factory on GitHub issues labeled `factory`. Use only when explicitly invoked as /factory in Claude Code or $factory in Codex, followed by setup, run, run <n>, grill <n>, or anything else (a question, feedback on a job, rejecting a job, or a new feature).
+description: Build a description into a reviewed, documented pull request. Use only when explicitly invoked as /factory in Claude Code or $factory in Codex, followed by a description, setup, run, run <job>, mitarbo <task-key>, or feedback about a job. Interactive brainstorming and grilling are separate from this workflow.
 disable-model-invocation: true
 ---
 
