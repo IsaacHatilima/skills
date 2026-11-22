@@ -19,6 +19,8 @@ and ~/.claude/CLAUDE.md for your account.
   <root>/.ai/skills/factory/              the factory: AGENT.md, bin/, templates/, references/
   <root>/.claude/skills/factory/SKILL.md  a pointer that makes /factory a Claude Code command
   <root>/.agents/skills/factory/SKILL.md  a pointer that makes $factory a Codex skill
+  <root>/.claude/skills/planning-brainstorming/SKILL.md  /planning-brainstorming pointer
+  <root>/.agents/skills/planning-brainstorming/SKILL.md  $planning-brainstorming pointer
   <root>/.claude/agents/<role>.md         the factory's ten agents for Claude Code
   <root>/.codex/agents/<role>.toml        the factory's ten agents for Codex
 
@@ -48,6 +50,7 @@ FACTORY_DIRS = ("bin", "templates")
 EXECUTABLE = {"bin/job", "bin/gate", "bin/route", "templates/checks.sh"}
 NOT_ROLES = {"AGENT.md", "SKILL.md", "README.md"}
 SKILLS_HOME = ".ai/skills"
+COMMAND_SKILLS = {"planning-brainstorming"}
 BLOCK_START, BLOCK_END = "<!-- skills:start -->", "<!-- skills:end -->"
 
 
@@ -246,6 +249,17 @@ def factory_adapter(user):
     ])
 
 
+def skill_adapter(native, data, user):
+    """Register a library skill with a host without copying its instructions."""
+    fields, _ = frontmatter(data.decode(), native)
+    skill = f"{skills_ref(user)}/{native}"
+    return "\n".join([
+        "---", f"name: {native}", f"description: {json.dumps(fields['description'])}", "---", "",
+        f"Read `{skill}/SKILL.md` in full and follow it for the user's request. "
+        f"Resolve its relative resources from `{skill}/`.", "",
+    ])
+
+
 def plan_factory(files, root, hosts, user):
     bundle = root / SKILLS_HOME / "factory"
     for rel, data in factory_files():
@@ -276,6 +290,11 @@ def plan(root, hosts, skills, workflows, user):
         files[root / SKILLS_HOME / "catalog.md"] = ((SKILLS / "catalog.md").read_bytes(), False)
     for native, rel, data in skill_files(skills):
         files[root / SKILLS_HOME / native / rel] = (data, False)
+        if native in COMMAND_SKILLS and rel == "SKILL.md":
+            adapter = skill_adapter(native, data, user).encode()
+            for host, folder in (("claude", ".claude"), ("codex", ".agents")):
+                if host in hosts:
+                    files[root / folder / "skills" / native / "SKILL.md"] = (adapter, False)
     return files
 
 
