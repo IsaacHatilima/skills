@@ -96,6 +96,31 @@ class InstallTest(unittest.TestCase):
             self.assertTrue((self.skills / native / "SKILL.md").is_file(), native)
         self.assertTrue((self.skills / "laravel-api-responses/templates/ApiResponse.php").is_file())
 
+    def test_web_and_all_install_complete_vite_and_router_skills_once(self):
+        for bundle in ("web", "all"):
+            self.install(bundle, "--project", str(self.project))
+            for skill_id in ("vite/configuration", "react-router/routing"):
+                with self.subTest(bundle=bundle, skill=skill_id):
+                    source = ROOT / "skills" / skill_id
+                    native = skill_id.replace("/", "-")
+                    installed = self.skills / native
+                    sources = {str(path.relative_to(source)): path for path in source.rglob("*")
+                               if path.is_file()}
+                    self.assertTrue({"SKILL.md", "LICENSE"} <= set(sources))
+                    self.assertEqual({str(path.relative_to(installed)) for path in installed.rglob("*")
+                                      if path.is_file()}, set(sources))
+                    for rel, path in sources.items():
+                        expected = path.read_bytes()
+                        if rel == "SKILL.md":
+                            expected = re.sub(r"^name: .+$", f"name: {native}", expected.decode(),
+                                              count=1, flags=re.M).encode()
+                        self.assertEqual((installed / rel).read_bytes(), expected, rel)
+                    self.assertEqual(claude_frontmatter(installed / "SKILL.md")["name"], native)
+                    for host in (".claude", ".agents"):
+                        self.assertFalse((self.project / host / "skills" / native).exists())
+                    for name in ("AGENTS.md", "CLAUDE.md"):
+                        self.assertIn(f"| `{native}` |", (self.project / name).read_text())
+
     def test_planning_installs_standalone_and_is_also_in_all(self):
         self.install("planning", "--project", str(self.project))
         installed = {p.parent.name for p in self.skills.glob("*/SKILL.md")}

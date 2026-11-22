@@ -14,6 +14,8 @@ Select by the code actually changed, including server functions and rendered pag
 |---|---|---|
 | `laravel/*` | spec-writer, builder, reviewer-code | Applicable Laravel paths. Use `laravel/frontend` for React/Inertia inside a Laravel app. |
 | `nest/*` | spec-writer, builder, reviewer-code | Applicable Nest paths. |
+| `vite/configuration` | spec-writer, builder, reviewer-code | Vite configuration, plugins, environment exposure, assets, development proxies, builds, or Vite/Vitest tooling integration changes. A Vite dependency alone does not select it. |
+| `react-router/routing` | spec-writer, builder, reviewer-code | React Router routes, navigation, URL state, pending/error states, loaders, actions, or authentication redirects change. Preserve the existing routing mode and API ownership. |
 | `next/actions` | spec-writer, builder, reviewer-code | A Next Server Action or its callers change. |
 | `next/database` | spec-writer, builder, reviewer-code, reviewer-security | A Next app's schema, migrations, repositories or database-backed tests change. |
 | `tanstack-start/actions` | spec-writer, builder, reviewer-code | A TanStack server function or its callers change. |

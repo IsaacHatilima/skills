@@ -29,6 +29,8 @@ skills/
   catalog.md               shared capability index
   laravel/                 actions, controllers, data, models, requests, tests, ... (Laravel 13)
   nest/                    actions, controllers, dtos, database, migrations, ...
+  vite/                    configuration: build tooling and React SPA conventions
+  react-router/            routing: modes, navigation, URL state and data boundaries
   next/                    actions, database
   tanstack-start/          actions
   frontend/                app-shell, overlays, data-display
@@ -59,6 +61,8 @@ The [catalog](skills/catalog.md) lists reusable capabilities and path-resolution
 | `skills/laravel/` | Laravel 13 conventions: [actions](skills/laravel/actions/SKILL.md), [api-responses](skills/laravel/api-responses/SKILL.md), [architecture](skills/laravel/architecture/SKILL.md), [controllers](skills/laravel/controllers/SKILL.md), [data](skills/laravel/data/SKILL.md), [eloquent-strictness](skills/laravel/eloquent-strictness/SKILL.md), [enums](skills/laravel/enums/SKILL.md), [frontend](skills/laravel/frontend/SKILL.md), [insights](skills/laravel/insights/SKILL.md), [jobs](skills/laravel/jobs/SKILL.md), [migrations](skills/laravel/migrations/SKILL.md), [models](skills/laravel/models/SKILL.md), [phpstan](skills/laravel/phpstan/SKILL.md), [requests](skills/laravel/requests/SKILL.md), [security](skills/laravel/security/SKILL.md), [tests](skills/laravel/tests/SKILL.md) |
 | `skills/nest/` | NestJS conventions for Drizzle (or an existing Prisma setup) and Zod: [actions](skills/nest/actions/SKILL.md), [api-responses](skills/nest/api-responses/SKILL.md), [architecture](skills/nest/architecture/SKILL.md), [controllers](skills/nest/controllers/SKILL.md), [database](skills/nest/database/SKILL.md), [dtos](skills/nest/dtos/SKILL.md), [jobs](skills/nest/jobs/SKILL.md), [migrations](skills/nest/migrations/SKILL.md), [security](skills/nest/security/SKILL.md), [tests](skills/nest/tests/SKILL.md) |
 | `skills/javascript/` | [domain-driver CLI](skills/javascript/domain-driver/SKILL.md) |
+| `skills/vite/` | [configuration](skills/vite/configuration/SKILL.md): version-aware Vite configuration, plugins, environment exposure, assets and builds |
+| `skills/react-router/` | [routing](skills/react-router/routing/SKILL.md): routing modes, layouts, navigation, URL state, pending/error states and data boundaries |
 | `skills/next/` | [actions](skills/next/actions/SKILL.md), [database](skills/next/database/SKILL.md) (Drizzle, or an existing Prisma setup) |
 | `skills/tanstack-start/` | [TanStack Start actions](skills/tanstack-start/actions/SKILL.md) |
 | `skills/frontend/` | Stack-agnostic: [app-shell](skills/frontend/app-shell/SKILL.md), [overlays](skills/frontend/overlays/SKILL.md), [data-display](skills/frontend/data-display/SKILL.md) |
@@ -73,6 +77,8 @@ Factory uses its role instructions for discovery, verification, and documentatio
 Use `skills/<group>/<skill-name>/SKILL.md` with lowercase, hyphenated names and YAML `name`/`description` frontmatter. Add supporting files only when needed. Register a new capability in the shared catalog; each agent workflow maintains its own role/phase selection rules.
 
 Each stack folder is self-contained so it can ship on its own. Its `actions` skill covers only that framework; stack-agnostic rules live in `skills/quality/`.
+
+The Vite and React Router skills are included in `web` and `all`, installed as `vite-configuration` and `react-router-routing`. They adapt [Anthony Fu's Vite skill](https://github.com/antfu/skills/tree/main/skills/vite) and the [official React Router skill](https://github.com/remix-run/react-router/tree/main/.agents/skills/react-router), with their MIT notices retained. They follow installed package versions and preserve the project's routing mode, build settings and domain-driver API hooks.
 
 Brainstorming combines Superpowers 7.0.2 and Matt Pocock's grill-me in one skill, with both authors credited in its [MIT license](skills/planning/brainstorming/LICENSE). It explores your idea, grills you in rounds about decisions and assumptions, compares approaches, and writes the agreed design. Grilling now lives inside brainstorming instead of a separate skill. It uses the host's available visual tools and needs no Superpowers plugin or Factory setup.
 
@@ -89,7 +95,7 @@ On a new machine, clone this repository and install the bundles you use. It need
 ./install planning                    # brainstorming with grill-me questioning; no factory
 ./install knowledge                   # retrieve and record verified lessons; no factory
 ./install basic                       # factory, planning, learning, quality, TypeScript, brand
-./install web                         # basic plus frontend, domain-driver, Next, TanStack Start (Vite apps too)
+./install web                         # basic plus Vite, React Router, frontend, domain-driver, Next, TanStack Start
 ./install web api                     # several bundles install their union, such as a Vite or Next app with a Nest API
 ./install laravel                     # basic plus the Laravel and frontend skills
 ./install all                         # everything in this repository

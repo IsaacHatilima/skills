@@ -36,6 +36,22 @@ Each stack folder has its own action skill, written only for that framework. Sel
 |---|---|---|
 | javascript/domain-driver | `javascript/domain-driver/SKILL.md` | Scaffolding a feature, layer, or bespoke operation with the domain-driver CLI in a JavaScript package. |
 
+## Vite
+
+Build tooling for the installed Vite version. Combine with the project's framework and frontend skills; Vite does not determine its routing or API architecture.
+
+| Skill id | Canonical path | Use when |
+|---|---|---|
+| vite/configuration | `vite/configuration/SKILL.md` | Changing or reviewing Vite configuration, plugins, environment exposure, assets, development proxies, builds, or Vite/Vitest tooling integration. |
+
+## React Router
+
+Routing guidance selected by the app's existing mode and installed version, including Vite SPAs that use data routers.
+
+| Skill id | Canonical path | Use when |
+|---|---|---|
+| react-router/routing | `react-router/routing/SKILL.md` | Configuring or reviewing React Router routes, layouts, navigation, URL state, pending/error states, loaders, actions, or authentication redirects while preserving the project's routing mode and data architecture. |
+
 ## Laravel
 
 Laravel 13 conventions, including React and Inertia inside a Laravel app (`laravel/frontend`). Each skill lists the paths it applies to. Business operations use `laravel/actions`; scaffolding uses Artisan, never domain-driver.
