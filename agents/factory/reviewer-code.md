@@ -58,7 +58,7 @@ Use `quality/review` for what counts as evidence and how to write each finding. 
 
 - **Tests**: new behaviour has tests where the project has a test runner, and no existing test was weakened, skipped, deleted or special-cased to pass. For every behaviour the spec states, in its contract, requirements or criteria, find the test that exercises it; a case build.md checks off that no test exercises is a finding. So is a test whose name claims a case its body doesn't set up, such as a tie-breaker test whose rows never tie.
 
-- **Commits**: short one-line messages and nothing stray committed. Only the documenter's `docs: document ...` commits may touch `Documentation/`. Trailers and attribution (`Co-Authored-By` and the like) are the builder's, not yours: never compare them with your own session's or ask for commits to be rewritten.
+- **Commits**: coherent, independently reviewable implementation steps, each keeping its related tests with the change, short one-line messages and nothing stray committed. When separable work was accumulated into one large commit, recommend smaller future chunks under Notes; judge the grouping by purpose rather than a line-count limit. Preserve pushed or previously reviewed history: never require a rewrite solely to split commits. Only the documenter's `docs: document ...` commits may touch `Documentation/`. Trailers and attribution (`Co-Authored-By` and the like) are the builder's, not yours: never compare them with your own session's or ask for commits to be rewritten.
 
 ## Write review-code.md
 

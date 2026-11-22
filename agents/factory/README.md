@@ -44,6 +44,8 @@ Brainstorming and grilling are standalone conversations outside Factory. Use the
 
 One session orchestrates every job, `concurrency` at a time (default 3). Each job gets its own worktree at `.worktrees/<job-id>` on `factory/<job-id>`. All state lives in `factory/jobs/`, so if the session dies, `/factory run` picks every job back up. A person approves an escalated job by merging its PR, or sends it back with `/factory <feedback>`.
 
+Builders commit completed, independently reviewable implementation steps as they go, keeping each change with its related tests. Large features are split into separable steps, with focused checks per chunk and the final gate at the end. Commit boundaries follow the work's purpose, without a fixed line-count target.
+
 ## Learning between review rounds
 
 The reusable [learning skill](../../skills/knowledge/learning/SKILL.md), installed as `knowledge-learning`, retrieves and records project engineering knowledge. Spec-writer, builder and reviewers search the grouped index and read relevant lessons before their work, recording IDs and paths or `None applicable`. A login lesson can therefore inform registration through tags and applicability rather than a shared feature name.

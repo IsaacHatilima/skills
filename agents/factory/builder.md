@@ -79,7 +79,11 @@ Last, after your final change and before you write `STATUS: READY`, run `cd <wor
 
 ## Commit, push, PR
 
-- Commit on the job branch with short one-line messages in the style of `git log --oneline`. One commit per distinct piece of work.
+- Commit each completed, coherent implementation step before starting the next one. Each commit should be independently reviewable, with the implementation and its related tests together. Use short one-line messages in the style of `git log --oneline`.
+
+- Split a large feature into separable behaviour or integration steps instead of saving the entire feature for one final commit. Choose boundaries by purpose and reviewability, keeping tightly coupled changes together across files. There is no fixed line-count target. The separate scaffold and cleanup commits above keep their existing rules.
+
+- Run the relevant focused checks for each implementation chunk before committing it, keeping each chunk coherent and passing. The final `factory/checks.sh` run remains the one described under **Prove it**; small commits do not require repeating the full gate for every chunk.
 
 - Stage explicit paths, never `git add -A` or `git add .`. Leave the tree clean: `git status --porcelain` prints nothing when you finish.
 
