@@ -173,6 +173,50 @@ class CommandsTest(unittest.TestCase):
         self.assertEqual(s.gh_state()["calls"], [])
         self.assertIn("MDE-21", s.job("summary", job_id).stdout)
 
+    def test_mitarbo_task_key_is_in_the_job_and_branch_independently_of_title(self):
+        cases = [
+            ("Registration", "MDE-21", "mde-21-registration"),
+            ("MDE-21 Registration", "MDE-21", "mde-21-registration"),
+            ("mde-21", "MDE-21", "mde-21"),
+            ("Implement an extended registration flow with email verification", "AUTH-108",
+             "auth-108-implement-an-extended-registration"),
+            ("MDE-21 Implement an extended registration flow", "MDE-21",
+             "mde-21-implement-an-extended-registration"),
+            ("TEAM-AUTH-API-UI-21 Registration", "TEAM-AUTH-API-UI-21",
+             "team-auth-api-ui-21-registration"),
+        ]
+        for number, (title, key, suffix) in enumerate(cases, 1):
+            with self.subTest(title=title):
+                job_id = self.s.create(title, "Build this task.\n", start=False,
+                                       source="mitarbo", key=key)
+                job = self.s.job_json(job_id)
+                self.assertEqual(job_id, f"{number:03d}-{suffix}")
+                self.assertEqual(job["branch"], f"factory/{job_id}")
+                self.assertEqual(job["source"]["key"], key)
+                self.assertEqual(self.s.git("check-ref-format", "--branch", job["branch"]), job["branch"])
+        self.assertEqual(self.s.gh_state()["calls"], [])
+
+    def test_mitarbo_worktree_uses_the_task_key_branch(self):
+        s = self.s
+        job_id = s.create("Registration", "Build registration.\n", source="mitarbo", key="MDE-21")
+        s.intake(job_id)
+        s.route(job_id)
+        s.job("advance", job_id, "spec")
+        self.assertEqual(s.git("branch", "--show-current", cwd=s.worktree(job_id)),
+                         "factory/001-mde-21-registration")
+        self.assert_no_issue_calls()
+
+    def test_mitarbo_requires_a_safe_task_key_before_allocating_a_job(self):
+        for key in (None, "MDE/21", "../MDE-21", "MDE--21", "MDE 21"):
+            with self.subTest(key=key):
+                args = ["create", "Registration", "--source", "mitarbo"]
+                if key is not None:
+                    args.extend(["--key", key])
+                result = self.s.job(*args, input="Build registration.\n", check=False)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertFalse(list((self.s.repo / "factory/jobs").glob("*/job.json")))
+        self.assertEqual(self.s.gh_state()["calls"], [])
+
     def test_legacy_job_uses_local_number_and_migrates_its_saved_request(self):
         s = self.s
         job_id = s.create(start=False)

@@ -62,6 +62,8 @@ Plain descriptions work in any project with Factory set up. Jobs have ids such a
 
 Mitarbo is optional. `/factory mitarbo MDE-21` asks the host's connected Mitarbo `get_task` tool for that one task, saves its returned description and context in the local request, and records its key and link. It never imports a task backlog or silently substitutes another task source. If the read tool is unavailable, paste the description instead. A task read does not authorize status updates, comments or replies; those need a separate explicit request and must follow the connected tool's requirements.
 
+Mitarbo jobs include the task key in lowercase in their job id and branch, even when the title omits it. For example, `MDE-21` with title `Registration` can create `factory/001-mde-21-registration`. The script assigns the name, keeps an existing task-key prefix only once, and all agents retain that assigned branch.
+
 When intake needs a decision, the orchestrator shows its questions in the conversation. Your answer is saved through `job answer <job>` and intake resumes when a slot is available. Feedback and rejection are recorded locally; PR state still comes from GitHub. The original description remains available in `request.md`, including any source snapshot and recorded answers.
 
 ## Agents

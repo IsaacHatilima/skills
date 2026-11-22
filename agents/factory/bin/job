@@ -52,8 +52,14 @@ from factorylib.transitions import (  # noqa: E402
 BIN = Path(__file__).resolve().parent
 
 
-def slugify(title):
-    words = re.findall(r"[a-z0-9]+", title.lower())[:4]
+def slugify(title, task_key=None):
+    words = re.findall(r"[a-z0-9]+", title.lower())
+    if task_key:
+        key_parts = task_key.lower().split("-")
+        if words[:len(key_parts)] == key_parts:
+            words = words[len(key_parts):]
+        return "-".join(key_parts + words[:4])
+    words = words[:4]
     return "-".join(words) or "request"
 
 
@@ -89,13 +95,18 @@ def cmd_create(args):
                     "source metadata must be nonblank single-line text")
         require(not parsed.url or parsed.url.startswith(("https://", "http://")),
                 "source URL must use http or https")
+        if parsed.source == "mitarbo":
+            require(parsed.key and re.fullmatch(r"[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*", parsed.key),
+                    "Mitarbo jobs require --key with hyphen-separated letters and digits")
         source = {"provider": parsed.source, "key": parsed.key, "url": parsed.url}
     skills = resolve_skills()
     knowledge = learning.knowledge_relative()
     jobs_dir().mkdir(parents=True, exist_ok=True)
     numbers = [int(p.name.split("-", 1)[0]) for p in jobs_dir().iterdir()
                if p.is_dir() and p.name.split("-", 1)[0].isdigit()]
-    job_id = f"{max(numbers, default=0) + 1:03d}-{slugify(parsed.title)}"
+    task_key = source["key"] if source and source["provider"] == "mitarbo" else None
+    slug = slugify(parsed.title, task_key)
+    job_id = f"{max(numbers, default=0) + 1:03d}-{slug}"
     job_dir(job_id).mkdir()
     job = {
         "id": job_id, "title": parsed.title.strip(), "source": source,
