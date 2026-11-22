@@ -1,5 +1,6 @@
 """./install: one copy of every skill in .ai/skills, command pointers, agents, and instruction blocks."""
 
+import json
 import os
 import re
 import shutil
@@ -54,7 +55,8 @@ class InstallTest(unittest.TestCase):
         self.assertEqual(installed, library)
         self.assertTrue((self.skills / "catalog.md").is_file())
         for folder in (self.project / ".claude" / "skills", self.project / ".agents" / "skills"):
-            self.assertEqual([p.name for p in folder.iterdir()], ["factory"], f"{folder} holds only the pointer")
+            self.assertEqual({p.name for p in folder.iterdir()}, {"factory", "planning-brainstorming"},
+                             f"{folder} holds only command pointers")
 
     def test_the_factory_bundle_is_complete_and_runnable(self):
         self.install("basic", "--project", str(self.project), "--host", "claude")
@@ -102,6 +104,17 @@ class InstallTest(unittest.TestCase):
         self.assertEqual(claude_frontmatter(skill / "SKILL.md")["name"], "planning-brainstorming")
         self.assertEqual((skill / "LICENSE").read_bytes(),
                          (ROOT / "skills/planning/brainstorming/LICENSE").read_bytes())
+        description = claude_frontmatter(skill / "SKILL.md")["description"]
+        for host in (".claude", ".agents"):
+            pointer = self.project / host / "skills/planning-brainstorming/SKILL.md"
+            fields = claude_frontmatter(pointer)
+            self.assertEqual(fields["name"], "planning-brainstorming")
+            self.assertEqual(json.loads(fields["description"]), description)
+            self.assertNotIn("disable-model-invocation", fields)
+            text = pointer.read_text()
+            self.assertIn("Read `.ai/skills/planning-brainstorming/SKILL.md` in full", text)
+            self.assertNotIn("## Grill the idea", text, "keep the actual instructions in one copy")
+        self.assertFalse((self.project / ".agents/skills/planning-brainstorming/agents/openai.yaml").exists())
         for name in ("AGENTS.md", "CLAUDE.md"):
             instructions = (self.project / name).read_text()
             self.assertIn("| `planning-brainstorming` |", instructions)
@@ -115,6 +128,42 @@ class InstallTest(unittest.TestCase):
         self.assertEqual((skill / "SKILL.md").read_bytes(), before)
         self.assertTrue((self.skills / "factory/AGENT.md").is_file())
         self.assertFalse((self.skills / "planning-grilling").exists())
+
+    def test_planning_registers_only_the_selected_host(self):
+        for host, folder, other in (("claude", ".claude", ".agents"), ("codex", ".agents", ".claude")):
+            with self.subTest(host=host):
+                project = self.tmp / host
+                project.mkdir()
+                self.install("planning", "--project", str(project), "--host", host)
+                self.assertTrue((project / folder / "skills/planning-brainstorming/SKILL.md").is_file())
+                self.assertFalse((project / other).exists())
+
+    def test_bundles_without_planning_do_not_register_brainstorming(self):
+        self.install("knowledge", "--project", str(self.project))
+        for host in (".claude", ".agents"):
+            self.assertFalse((self.project / host / "skills/planning-brainstorming").exists())
+
+    def test_reinstall_adds_missing_brainstorming_registration_without_changing_its_skill(self):
+        self.install("planning", "--project", str(self.project))
+        before = (self.skills / "planning-brainstorming/SKILL.md").read_bytes()
+        for host in (".claude", ".agents"):
+            shutil.rmtree(self.project / host / "skills")
+        self.install("planning", "--project", str(self.project))
+        self.assertEqual((self.skills / "planning-brainstorming/SKILL.md").read_bytes(), before)
+        for host in (".claude", ".agents"):
+            self.assertTrue((self.project / host / "skills/planning-brainstorming/SKILL.md").is_file())
+        self.assertIn("0 of", self.install("planning", "--project", str(self.project)).stdout)
+
+    def test_modified_brainstorming_registration_needs_force(self):
+        self.install("planning", "--project", str(self.project))
+        pointer = self.project / ".agents/skills/planning-brainstorming/SKILL.md"
+        pointer.write_text("mine\n")
+        res = self.install("planning", "--project", str(self.project), check=False)
+        self.assertEqual(res.returncode, 1)
+        self.assertIn(str(pointer), res.stderr)
+        self.assertEqual(pointer.read_text(), "mine\n")
+        self.install("planning", "--project", str(self.project), "--force")
+        self.assertIn("Read `.ai/skills/planning-brainstorming/SKILL.md` in full", pointer.read_text())
 
     def test_learning_installs_without_factory_and_basic_adds_both_teacher_formats(self):
         self.install("knowledge", "--project", str(self.project))
@@ -194,6 +243,9 @@ class InstallTest(unittest.TestCase):
         self.install("basic", home=home)
         self.assertTrue((home / ".ai/skills/quality-review/SKILL.md").is_file())
         self.assertIn("Read `~/.ai/skills/factory/AGENT.md`", (home / ".claude/skills/factory/SKILL.md").read_text())
+        for host in (".claude", ".agents"):
+            pointer = home / host / "skills/planning-brainstorming/SKILL.md"
+            self.assertIn("Read `~/.ai/skills/planning-brainstorming/SKILL.md` in full", pointer.read_text())
         self.assertIn('"$HOME"/.ai/skills/factory/bin/gate --hook', (home / ".claude/agents/builder.md").read_text())
         for path in (home / ".claude/CLAUDE.md", home / ".codex/AGENTS.md"):
             self.assertIn("Agent skills live in `~/.ai/skills/`", path.read_text(), path)
