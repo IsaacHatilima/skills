@@ -44,6 +44,8 @@ Brainstorming and grilling are standalone conversations outside Factory. Use the
 
 One session orchestrates every job, `concurrency` at a time (default 3). Each job gets its own worktree at `.worktrees/<job-id>` on `factory/<job-id>`. All state lives in `factory/jobs/`, so if the session dies, `/factory run` picks every job back up. A person approves an escalated job by merging its PR, or sends it back with `/factory <feedback>`.
 
+Builders commit completed, independently reviewable implementation steps as they go, keeping each change with its related tests. Large features are split into separable steps, with focused checks per chunk and the final gate at the end. Commit boundaries follow the work's purpose, without a fixed line-count target.
+
 ## Learning between review rounds
 
 The reusable [learning skill](../../skills/knowledge/learning/SKILL.md), installed as `knowledge-learning`, retrieves and records project engineering knowledge. Spec-writer, builder and reviewers search the grouped index and read relevant lessons before their work, recording IDs and paths or `None applicable`. A login lesson can therefore inform registration through tags and applicability rather than a shared feature name.
@@ -59,6 +61,8 @@ No collection is seeded by installation. New lessons help later rounds on that b
 Plain descriptions work in any project with Factory set up. Jobs have ids such as `004-dark-mode`; commands also accept their local sequence number (`4`). `/factory run` resumes the saved local queue. It does not discover work by listing GitHub issues or external tasks.
 
 Mitarbo is optional. `/factory mitarbo MDE-21` asks the host's connected Mitarbo `get_task` tool for that one task, saves its returned description and context in the local request, and records its key and link. It never imports a task backlog or silently substitutes another task source. If the read tool is unavailable, paste the description instead. A task read does not authorize status updates, comments or replies; those need a separate explicit request and must follow the connected tool's requirements.
+
+Mitarbo jobs include the task key in lowercase in their job id and branch, even when the title omits it. For example, `MDE-21` with title `Registration` can create `factory/001-mde-21-registration`. The script assigns the name, keeps an existing task-key prefix only once, and all agents retain that assigned branch.
 
 When intake needs a decision, the orchestrator shows its questions in the conversation. Your answer is saved through `job answer <job>` and intake resumes when a slot is available. Feedback and rejection are recorded locally; PR state still comes from GitHub. The original description remains available in `request.md`, including any source snapshot and recorded answers.
 
