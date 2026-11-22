@@ -13,9 +13,9 @@
     "skills": ["planning/*", "knowledge/learning", "quality/*", "typescript/*", "brand/*"]
   },
   "web": {
-    "description": "Web apps (Vite, Next.js, TanStack Start): basic plus the frontend skills and domain-driver",
+    "description": "Web apps: basic plus Vite, React Router, Next.js, TanStack Start, frontend skills and domain-driver",
     "include": ["basic"],
-    "skills": ["frontend/*", "next/*", "tanstack-start/*", "javascript/*"]
+    "skills": ["frontend/*", "vite/*", "react-router/*", "next/*", "tanstack-start/*", "javascript/*"]
   },
   "laravel": {
     "description": "Laravel apps: basic plus the Laravel skills and the frontend skills for their React or Inertia pages",

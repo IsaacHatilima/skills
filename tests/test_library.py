@@ -82,6 +82,18 @@ class BundleTest(unittest.TestCase):
             self.assertIn("factory", workflows)
         self.assertEqual(self.installer.resolve(["knowledge"]), (["knowledge/learning"], []))
 
+    def test_web_and_all_carry_vite_and_react_router_without_expanding_other_bundles(self):
+        added = {"vite/configuration", "react-router/routing"}
+        for name in ("web", "all"):
+            with self.subTest(bundle=name):
+                skills, workflows = self.installer.resolve([name])
+                self.assertTrue(added <= set(skills))
+                self.assertEqual(workflows, ["factory"])
+        for name in ("basic", "api", "laravel", "planning", "knowledge"):
+            with self.subTest(bundle=name):
+                skills, _ = self.installer.resolve([name])
+                self.assertFalse(added & set(skills))
+
     def test_a_bundle_without_workflows_installs_no_factory(self):
         self.use_bundles({"brand": {"skills": ["brand/identity"]}})
         self.assertEqual(self.installer.resolve(["brand"]), (["brand/identity"], []))
