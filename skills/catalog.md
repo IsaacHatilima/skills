@@ -58,7 +58,7 @@ Laravel 13 conventions, including React and Inertia inside a Laravel app (`larav
 
 | Skill id | Canonical path | Use when |
 |---|---|---|
-| laravel/actions | `laravel/actions/SKILL.md` | Creating, refactoring, or reviewing a Laravel action or operation service that queries, writes, or makes a business decision. |
+| laravel/actions | `laravel/actions/SKILL.md` | Creating, refactoring, or reviewing a Laravel business operation that coordinates reads and writes through repositories. |
 | laravel/api-responses | `laravel/api-responses/SKILL.md` | Adding or changing a Laravel JSON API endpoint, its response envelope or pagination output, or how API errors such as 401, 403, 404, 422, 429, and 500 are rendered. |
 | laravel/architecture | `laravel/architecture/SKILL.md` | Placing new Laravel behaviour, naming a new class, planning a feature or refactor, or reviewing where queries, validation, authorization, and responses belong. |
 | laravel/controllers | `laravel/controllers/SKILL.md` | Adding or changing Laravel controllers or routes, wiring a FormRequest and action to an endpoint, or choosing between an API response, Inertia page, and redirect. |
@@ -72,6 +72,7 @@ Laravel 13 conventions, including React and Inertia inside a Laravel app (`larav
 | laravel/models | `laravel/models/SKILL.md` | Creating or changing an Eloquent model, or its casts, relationships, scopes, fillable columns, or PHPDoc properties. |
 | laravel/phpstan | `laravel/phpstan/SKILL.md` | Adding or running PHPStan or Larastan in a Laravel application, or when PHPStan reports an error. |
 | laravel/requests | `laravel/requests/SKILL.md` | Adding or changing a Laravel FormRequest, validation rules, request authorization, or query parameters such as filters, sorting, and pagination. |
+| laravel/repositories | `laravel/repositories/SKILL.md` | Adding or changing application database queries, writes, relation loads, locks and transactions, or moving persistence out of an action or service. |
 | laravel/security | `laravel/security/SKILL.md` | Adding or reviewing Laravel authorization, policies, authentication, API tokens, CORS, CSRF exceptions, file uploads, raw queries, HTML output, rate limits, or production configuration, or before deploying a Laravel application. |
 | laravel/tests | `laravel/tests/SKILL.md` | Writing, choosing, or running tests for a Laravel application, including Pest unit, feature, action, HTTP, and browser tests, or deciding which tests a change needs. |
 

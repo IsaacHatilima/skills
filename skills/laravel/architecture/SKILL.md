@@ -11,18 +11,19 @@ Applies to: `app/**`. The Laravel skills target Laravel 13. Project guidance (`A
 
 | Concern | Lives in | Skill |
 |---|---|---|
-| Authorization and validation | FormRequest, calling a policy | `requests`, `security` |
+| Authorization and validation | FormRequest, using the project's permission API or Gate/policy | `requests`, `security` |
 | Input normalization | Data `fromRequest()` | `data` |
-| Queries, writes, transactions, relation loads, business decisions | Action in `app/Actions/{Domain}/`, or service in `app/Services/{Domain}/` | `actions` |
+| Business decisions and operation orchestration | Action in `app/Actions/{Domain}/`, or service in `app/Services/{Domain}/` | `actions` |
+| Database queries, writes, relation loads, locks and transaction boundaries | Repository in `app/Repositories/{Domain}/`, following project layout | `repositories` |
 | Output representation and formatting | Resource `fromModel()`, returned by the action | `data` |
 | HTTP response: API envelope, Inertia page, redirect | Controller | `controllers`, `api-responses` |
 | Background work | Job calling an action | `jobs` |
 
-The flow is FormRequest → `Data::fromRequest()` → action → Resource or model → controller response. Web, API, job, and command callers reuse the same actions.
+The flow is FormRequest → `Data::fromRequest()` → action → repository → action result (Resource or model) → controller response. Web, API, job, and command callers reuse the same actions; controllers do not call repositories directly.
 
 ## Naming
 
-Without a project convention, a class name ends with its type: `CreateUserAction` (or `CreateUserService`), `CreateUserController`, `CreateUserRequest`, `CreateUserData`, `UserResource`, `UserPolicy`, `DetectCommitLanguageJob`, `UserCreatedEvent`, `SendWelcomeEmailListener`, `InvoicePaidNotification`, `WelcomeMail`. Models and enums are plain nouns: `User`, `UserStatus`. Test files mirror the class: `CreateUserActionTest.php`.
+Without a project convention, a class name ends with its type: `CreateUserAction` (or `CreateUserService`), `CreateUserRepository`, `CreateUserController`, `CreateUserRequest`, `CreateUserData`, `UserResource`, `UserPolicy`, `DetectCommitLanguageJob`, `UserCreatedEvent`, `SendWelcomeEmailListener`, `InvoicePaidNotification`, `WelcomeMail`. Models and enums are plain nouns: `User`, `UserStatus`. Test files mirror the class: `CreateUserActionTest.php`.
 
 ## Attributes
 
@@ -30,7 +31,7 @@ Where Laravel 13 offers an attribute instead of a property or method, use it. `m
 
 ## Rules
 
-- Only framework lookups may run outside actions: route-model binding, `exists`/`unique` rules, the current user, Gate, policy and `can()` checks, and Spatie's `hasRole()`/`hasPermissionTo()`. Any other lookup, including one inside a policy, calls an action.
+- Only framework-managed lookups may run outside repositories: route-model binding, validation's `exists`/`unique`, the current user and the project's authorization/permission APIs. Custom lookups, including those needed by a policy, go through an action backed by a repository. Actions contain no direct database calls.
 - Data and Resources never query or lazy-load.
 - Translate user-facing strings with `__()`.
 - New work follows these boundaries. Fix unrelated legacy violations in separate changes.

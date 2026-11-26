@@ -10,12 +10,12 @@ Applies to: `app/Jobs/**`, `app/Listeners/**`, `config/queue.php`.
 ## Rules
 
 - Queue slow or external work that the response doesn't depend on: exports, reports, imports, outbound webhooks, third-party API calls, bulk notifications.
-- A job is a transport like a controller. Its `handle()` calls an injected action, which owns the queries, writes, and transaction (see `actions`). A queued listener handles one event and follows the same rules.
+- A job is a transport like a controller. Its `handle()` calls an injected action for business orchestration; that action calls repositories for queries, writes and atomic persistence (see `actions`, `repositories`). A queued listener handles one event and follows the same rules.
 - Configure queueing with class attributes from `Illuminate\Queue\Attributes`, never the matching properties: `#[Queue]`, `#[Connection]`, `#[Tries]`, `#[Backoff]`, `#[Timeout]`, `#[MaxExceptions]`, `#[FailOnTimeout]`, `#[UniqueFor]`, `#[DeleteWhenMissingModels]`. Queued listeners, mailables, and notifications read `#[Queue]`, `#[Tries]`, `#[Backoff]`, and `#[Timeout]` the same way.
 - Bound every job with `#[Tries]` or `retryUntil()`, and with `#[Timeout]`. Add `#[Backoff]` for external services, and implement `failed()` to record or alert on final failure.
-- Dispatch after commit when the job depends on a write: implement `ShouldQueueAfterCommit`, or dispatch from `DB::afterCommit()` (see `actions`).
+- Dispatch after commit when the job depends on a write: implement `ShouldQueueAfterCommit`, or use the established after-commit dispatcher/persistence-boundary callback. Keep direct database callbacks in repositories rather than adding `DB::afterCommit()` to actions (see `actions`, `repositories`).
 - Pass models or IDs, not large payloads. Queued models are re-fetched when the job runs; add `#[DeleteWhenMissingModels]` when a deleted record should cancel the job.
-- Make the work idempotent: a retry after a partial failure must not duplicate a charge, email, or row. The action checks, under a lock, for the state the job produces, or keys the external call with an idempotency key.
+- Make the work idempotent: a retry after a partial failure must not duplicate a charge, email or row. The action coordinates a repository-backed atomic state check/write, or keys the external call with an idempotency key.
 - When two copies running at once would conflict, implement `ShouldBeUnique` with `uniqueId()` and `#[UniqueFor]`, or use the `WithoutOverlapping` middleware. Use the `RateLimited` middleware with a named limiter for rate-limited APIs.
 - Implement `ShouldBeEncrypted` when the payload carries personal or secret data.
 

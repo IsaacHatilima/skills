@@ -12,12 +12,12 @@ Applies to: `app/Models/**`.
 - Models are declarative: attributes, relationships, scopes, `casts()`, constants, and property types.
   - Relationships and scopes build queries but never run them: no `get()`, `first()`, `exists()`, `count()`, or writes.
   - Accessors compute only from loaded attributes.
-- Queries, writes, and business behaviour live in actions. Never put them in model helpers, `app/Concerns` traits, events, boot hooks, or observers. Framework lifecycle features stay: UUID generation, timestamps, casts, and authentication traits.
+- Repositories own queries, writes and relation loads; actions own business behaviour. Never put them in model helpers, `app/Concerns` traits, events, boot hooks or observers. Framework lifecycle features stay: UUID generation, timestamps, casts and authentication traits.
 - Configure the model with class attributes from `Illuminate\Database\Eloquent\Attributes`, never the matching property or method: `#[Table]`, `#[Fillable]`, `#[Hidden]`, `#[RouteKey]`, `#[UseFactory]`, `#[UsePolicy]`, `#[ObservedBy]`, `#[ScopedBy]`. Add only the ones the model needs.
-- `#[Fillable]` lists only the columns that actions mass-assign. Privileged columns stay out, and secrets go in `#[Hidden]` (see `security`). Never use `#[Unguarded]` or `$guarded = []`.
+- `#[Fillable]` lists only the columns that repositories mass-assign. Privileged columns stay out, and secrets go in `#[Hidden]` (see `security`). Never use `#[Unguarded]` or `$guarded = []`.
 - Entity models use `HasUuids`; pivot and lookup models keep integer keys. Match the real schema, and don't convert existing keys or routes without a planned migration (see `migrations`).
 - Cast string enum columns to their backed enum in `casts()` (see `enums`). Use a custom cast or `Attribute` for value objects, such as money stored in minor units.
-- Local scopes are protected `#[Scope]` methods, called from actions. Reserve a global scope, registered with `#[ScopedBy]`, for a filter that every query must have, such as tenant isolation. Never define the same filter both ways.
+- Local scopes are protected `#[Scope]` methods, called from repositories. Reserve a global scope, registered with `#[ScopedBy]`, for a filter that every query must have, such as tenant isolation. Never define the same filter both ways.
 - Recoverable records use `SoftDeletes`.
 - Every model has a class-level PHPDoc block. Use `@property` for writable attributes and `@property-read` for computed attributes and relations. Types match the casts and nullability; to-many relations use collection generics.
 
@@ -67,12 +67,12 @@ class User extends Authenticatable
 }
 ```
 
-`status` is privileged, so it stays out of `#[Fillable]` and actions assign it directly.
+`status` is privileged, so it stays out of `#[Fillable]`; the action decides its value and a repository assigns it explicitly.
 
 ## Workflow
 
 1. For an existing model such as `User`, keep its base class, authentication and notification traits, hidden fields, casts, and route binding. Change only the requested concern.
-2. When moving logic out of a helper, observer, or boot hook, put it in an action, update its callers, and keep its transaction and after-commit timing.
+2. When moving logic out of a helper, observer or boot hook, put business decisions in an action and persistence in repositories. Update callers and preserve transaction and after-commit timing.
 3. Verify:
    - key generation;
    - fillable versus protected assignment;

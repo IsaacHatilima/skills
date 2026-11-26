@@ -91,7 +91,7 @@ class InstallTest(unittest.TestCase):
 
     def test_bundles_combine_and_include_each_other(self):
         self.install("web", "laravel", "--project", str(self.project))
-        for native in ("frontend-overlays", "next-actions", "javascript-domain-driver", "laravel-actions", "laravel-api-responses",
+        for native in ("frontend-overlays", "next-actions", "javascript-domain-driver", "laravel-actions", "laravel-repositories", "laravel-api-responses",
                        "quality-simplicity", "typescript-best-practices"):
             self.assertTrue((self.skills / native / "SKILL.md").is_file(), native)
         self.assertTrue((self.skills / "laravel-api-responses/templates/ApiResponse.php").is_file())
