@@ -15,20 +15,26 @@ Applies to: `app/Http/Requests/**`.
   - Lists use `List{Nouns}Request`.
 - A FormRequest only authorizes and validates. It doesn't normalize, build Data, query, write, or build responses.
 - Set request options with attributes from `Illuminate\Foundation\Http\Attributes` instead of properties: `#[StopOnFirstFailure]`, `#[ErrorBag('login')]`, `#[RedirectToRoute('users.index')]`.
-- `authorize()` calls the policy through `Gate::allows()`, passing the model class for create and the route-bound model otherwise. Parent scoping comes from `scopeBindings()` on the route (see `controllers`).
+- Choose authorization from the project's installed stack and documented rules, not a runtime `class_exists()` branch:
+  - With `spatie/laravel-permission`, `authorize()` uses its permission API, such as `$this->user()?->hasPermissionTo('users.create') ?? false`, or the project's established permission helper. Use existing permission names and the active guard/team context. Do not replace this with `Gate::allows()` or `$user->can()`, which goes through Gate too. Do not install the package merely to follow this branch.
+  - Without that package, `authorize()` calls the policy through `Gate::allows()`, passing the model class for create and the route-bound model otherwise.
+  - Permission to perform an operation does not grant access to every record. Preserve the project's record/tenant checks and parent scoping through `scopeBindings()` (see `controllers`); any application lookup behind an authorization check goes through an action/repository, not an inline query.
+  - Direct Spatie `hasPermissionTo()` checks do not run `Gate::before()` super-admin overrides. If the project has approved bypass semantics, keep them explicit in its established permission helper and test them. Never silently add a super-admin grant or fall back to Gate to hide the difference.
 - Declare explicit rules for every accepted payload and query field, including nested keys.
   - Choose `required`, `nullable`, and `sometimes` so that omitting a field and sending `null` mean what the contract says.
   - For updates, take any model ignored by `unique` from the route, never from a submitted ID.
-- Validate user-chosen sort and filter fields against an allowlist with `Rule::in()`; the action maps them to real columns. Password fields use `Password::defaults()` (see `security`).
+- Validate user-chosen sort and filter fields against an allowlist with `Rule::in()`; the repository maps them to real columns. Password fields use `Password::defaults()` (see `security`).
 - Put checks that need another field or the database in `after()`.
-  - It receives injected actions as typed parameters and returns callbacks.
+  - It receives injected check actions as typed parameters and returns callbacks; those actions delegate database work to repositories. The FormRequest contains no Eloquent or `DB` calls.
   - Each callback returns early when its prerequisite fields already failed.
   - Checks that need normalized values belong in the action instead.
   - Framework `exists` and `unique` rules are fine.
 - Extract rules into an `app/Concerns/*ValidationRules` trait only when two requests actually share them.
 - Translate custom `messages()` and `attributes()`. Let Laravel's validation and authorization exceptions reach the web error bag or the central API handler (see `api-responses`). Don't override the failure methods.
 
-## Example
+## Without Spatie permissions
+
+This FormRequest uses the application's Gate policy because `spatie/laravel-permission` is not part of its authorization stack.
 
 ```php
 <?php
@@ -62,11 +68,27 @@ final class CreateUserRequest extends FormRequest
 }
 ```
 
+## With Spatie permissions
+
+In a project using `spatie/laravel-permission`, keep the same validation rules and replace the authorization method with the package-backed check below. `users.create` is an example; use the project's actual permission name. The `Gate` import and model-class policy call from the previous example are not needed for this create permission.
+
+```php
+public function authorize(): bool
+{
+    return $this->user()?->hasPermissionTo('users.create') ?? false;
+}
+```
+
+Use the established project helper instead when it also implements approved guard/team, resource access, or bypass rules. It must preserve those rules explicitly rather than assuming a direct package call runs Gate hooks.
+
 ## Verify
 
 Tests cover:
-- authorized and forbidden callers;
+- guests, authorized and forbidden callers, and cross-tenant/record access;
+- the selected Spatie permission or Gate-policy path, including any approved bypass and guard/team behaviour;
 - each rule's failure, and omitted versus `null`;
 - rejected sort values;
 - translated errors;
 - an `after()` lookup that doesn't run when its prerequisite fields failed.
+
+References: Spatie's [permission checks](https://spatie.be/docs/laravel-permission/v8/basic-usage/direct-permissions) and [Gate versus direct permission checks](https://spatie.be/docs/laravel-permission/v8/basic-usage/super-admin). Use the docs for the installed package version.

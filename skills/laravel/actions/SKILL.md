@@ -1,6 +1,6 @@
 ---
 name: actions
-description: "Use when creating, refactoring, or reviewing a Laravel action or operation service that queries, writes, or makes a business decision."
+description: "Use when creating, refactoring, or reviewing a Laravel action or operation service that makes a business decision or coordinates reads and writes through repositories."
 ---
 
 # Actions
@@ -11,7 +11,7 @@ Applies to: `app/Actions/**`, or `app/Services/**` in a project that uses servic
 
 - Follow the project: `app/Actions/{Domain}/` with an `Action` suffix, or `app/Services/{Domain}/` with a `Service` suffix. A new project with neither uses actions. The rules are the same for both.
 - `final readonly class` with `declare(strict_types=1);` and one public, fully typed `handle()`. Name writes with a domain verb (`CreateUserAction`), reads `List{Nouns}Action` or `Get{Noun}Action`, and checks `Is*` or `Has*`.
-- Constructor-inject reused actions; never resolve or construct them inside `handle()`. Keep per-call state in local variables.
+- Constructor-inject repositories and reused actions; never resolve or construct them inside `handle()`. Keep per-call state in local variables.
 - Keep methods small: follow the project's complexity tool, or keep each method at a cyclomatic complexity of 5 or less. Above that, extract private methods that share the caller's transaction.
 
 ## Inputs
@@ -22,21 +22,22 @@ Applies to: `app/Actions/**`, or `app/Services/**` in a project that uses servic
 - Trust Data's normalization; don't trim or parse again.
 - Owner, tenant, and team columns come from the actor or parent, never from input. Every read is scoped to records the caller may see (see `security`).
 
-## Persistence
+## Repository calls
 
-- Map every column explicitly from typed input, in create and update calls: `'phone_number' => $data->phoneNumber`. Never pass Data, `toArray()`, or an attributes array to Eloquent. The model's `#[Fillable]` must list those columns (see `models`). Storage conversions such as hashing happen here.
-- Partial updates write only the supplied fields, keep an allowed explicit `null`, and skip the write when nothing was supplied.
-- Related writes share one `DB::transaction()`. Read-modify-write logic locks its rows with `lockForUpdate()` inside it. A single insert needs no transaction.
-- Notifications, mail, jobs, and events that depend on the write run after commit, through `DB::afterCommit()` or `ShouldQueueAfterCommit`. An inner action returning doesn't mean the outer transaction committed.
+- All database access belongs to repositories (see `repositories`): queries, writes, `save()`/`delete()`, relation loads, counts, locks and transaction calls. An action calls the needed repositories with normalized Data or specific typed values and trusted actor/parent context. It never finishes a query builder or triggers lazy loading itself.
+- Keep business decisions here. A repository returns records or typed results; the action applies rules and decides what subsequent work is needed. Do not pass an entire request or more data than the repository operation needs.
+- Repository calls preserve explicit column mapping, omitted-versus-null updates, tenant scope and database constraints. Ask the repository for exactly the result data and loaded relations required by its caller.
+- Preserve atomicity when composing writes: use the project's repository/unit-of-work boundary for one atomic operation, rather than adding `DB::transaction()` here or committing each repository call independently. Decisions based on locked state must run within that boundary.
+- Notifications, mail, jobs and events that depend on writes run after commit through the established message/queue support or a callback registered by the persistence boundary. An inner repository returning doesn't mean an outer transaction committed.
 
 ## Results and failures
 
 - Return what the caller needs, always typed. Never return an untyped array or `mixed`.
-  - The result goes into a response (API JSON or Inertia props): eager-load every relation and count the Resource reads, then return `{Noun}Resource::fromModel()` (see `data`).
+  - The result goes into a response (API JSON or Inertia props): request every needed relation and count from the repository, then return `{Noun}Resource::fromModel()` (see `data`). Building it must not query.
   - The caller keeps working with the record, such as another action or a redirect to its route: return the model.
   - Callers need both: return the model, and the response caller passes it to a `Get{Noun}Action` that returns the Resource.
   - Deletes return `void`; checks return `bool`.
-- Reads select only the needed columns and keep pagination when mapping to Resources.
+- Repositories select the needed columns; preserve their pagination when mapping results to Resources.
 - Broken business rules throw a translated `ValidationException::withMessages()` or a domain exception. Authorization, redirects, JSON, and flash messages belong to the caller.
 - Fortify contracts keep their required `array $input` in the adapter, which validates, builds Data, and delegates to an action without querying.
 
@@ -51,33 +52,33 @@ namespace App\Actions\Users;
 
 use App\Data\Users\CreateUserData;
 use App\Data\Users\UserResource;
-use App\Models\User;
-use Illuminate\Support\Facades\Hash;
+use App\Repositories\Users\CreateUserRepository;
+use App\Repositories\Users\UserEmailExistsRepository;
 use Illuminate\Validation\ValidationException;
 
 final readonly class CreateUserAction
 {
+    public function __construct(
+        private UserEmailExistsRepository $emailExists,
+        private CreateUserRepository $createUser,
+    ) {}
+
     public function handle(CreateUserData $data): UserResource
     {
-        if (User::query()->where('email', $data->email)->exists()) {
+        if ($this->emailExists->handle($data->email)) {
             throw ValidationException::withMessages([
                 'email' => __('The email has already been taken.'),
             ]);
         }
 
-        $user = User::query()->create([
-            'name' => $data->name,
-            'email' => $data->email,
-            'phone_number' => $data->phoneNumber,
-            'password' => Hash::make($data->password),
-        ]);
+        $user = $this->createUser->handle($data);
 
         return UserResource::fromModel($user);
     }
 }
 ```
 
-`CreateUserData` has already lower-cased the email, so the check matches stored values; the unique index still guards concurrent inserts.
+`CreateUserData` has already lower-cased the email, so the repository check matches stored values; the unique index still guards concurrent inserts. Both repository implementations are shown in `repositories`.
 
 ## Verify
 

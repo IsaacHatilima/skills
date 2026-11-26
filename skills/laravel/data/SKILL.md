@@ -14,13 +14,13 @@ Applies to: `app/Data/**`. Uses `spatie/laravel-data`; if it's missing, install 
 - The factory reads only validated, known fields through typed getters such as `$request->string('name')`. It owns domain normalization: trimming, letter case, and turning blank strings into null. Passwords and other opaque values pass through untouched.
 - Jobs and commands build the same Data through their own factory.
 - Partial-update contracts use [`Optional`](https://spatie.be/docs/laravel-data/v4/as-a-data-transfer-object/optional-properties) properties, so an omitted field differs from an explicit `null`.
-- Data is never sent to the frontend and never passed to Eloquent (see `actions`).
+- Data is never sent to the frontend or passed wholesale to Eloquent. Actions pass the needed typed input to repositories, which map columns explicitly (see `repositories`).
 
 ## Output Resources
 
 - Also live in `app/Data/{Domain}/`, named `{Noun}Resource`, with camelCase properties matching the frontend type and an explicit, typed `fromModel()`.
 - A Resource is the outbound shape for API JSON and Inertia props. Formatting and derived values, such as labels, full names, and money from minor units, are computed in `fromModel()`, so controllers and pages receive them ready.
-- Read only selected attributes and already-loaded relations or counts. The action that returns the Resource loads them first (see `actions`); Resources never query or lazy-load.
+- Read only selected attributes and already-loaded relations or counts. The action obtains them from a repository before building the Resource (see `actions`, `repositories`); Resources never query or lazy-load.
 
 ## Example
 
