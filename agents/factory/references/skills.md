@@ -24,6 +24,8 @@ Select by the code actually changed, including server functions and rendered pag
 
 Choose the skills whose documented scope matches the task, not every skill in a framework. Reviewer-security also reads selected skills for authentication, authorization, input, persistence, or output across changed trust boundaries. UX/UI reviewers read selected frontend guidance for the surfaces they review. Documenter and approver need only skills relevant to their own work. Assign reviewer skills by these rules whether or not intake routed that reviewer for the job; an unrouted reviewer doesn't run and doesn't read them.
 
+For Laravel persistence work, select `laravel/repositories` alongside the relevant action/model guidance. Actions orchestrate business operations; repositories own database calls and loading the data needed by their results. Select `laravel/tests` for the changed call chain: focused checks during development, the complete suite before opening the PR.
+
 A project contains only the skill groups installed in it, from this library's bundles. If the task requires a framework's skills and that framework is absent, report its missing canonical path. Do not substitute another stack. For a framework without a catalog entry, use project guidance and any explicitly supplied project skill, and record that choice.
 
 ## Additional capabilities
