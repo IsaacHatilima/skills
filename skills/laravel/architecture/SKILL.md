@@ -23,7 +23,7 @@ The flow is FormRequest → `Data::fromRequest()` → action → repository → 
 
 ## Naming
 
-Without a project convention, a class name ends with its type: `CreateUserAction` (or `CreateUserService`), `CreateUserRepository`, `CreateUserController`, `CreateUserRequest`, `CreateUserData`, `UserResource`, `UserPolicy`, `DetectCommitLanguageJob`, `UserCreatedEvent`, `SendWelcomeEmailListener`, `InvoicePaidNotification`, `WelcomeMail`. Models and enums are plain nouns: `User`, `UserStatus`. Test files mirror the class: `CreateUserActionTest.php`.
+Without a project convention, a class name ends with its type: `CreateUserAction` (or `CreateUserService`), `CreateUserController`, `CreateUserRequest`, `CreateUserData`, `UserResource`, `UserPolicy`, `DetectCommitLanguageJob`, `UserCreatedEvent`, `SendWelcomeEmailListener`, `InvoicePaidNotification`, `WelcomeMail`. Repositories are the exception: each operation is named for what it does (`CreateUser`, `UserEmailTaken`), and only the domain's entry file carries the suffix (`UserRepository`; see `repositories`). Models and enums are plain nouns: `User`, `UserStatus`. Test files mirror the class: `CreateUserActionTest.php`.
 
 ## Attributes
 

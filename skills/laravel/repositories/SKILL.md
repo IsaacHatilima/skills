@@ -1,6 +1,6 @@
 ---
 name: repositories
-description: "Use when adding or changing Laravel database queries, writes, relation loads, pagination, locks or transaction boundaries, or moving persistence out of an action or service."
+description: "Use when adding or changing Laravel database queries, writes, relation loads, list search and filters, pagination, locks or transaction boundaries, or moving persistence out of an action or service."
 ---
 
 # Repositories
@@ -10,10 +10,11 @@ Applies to: `app/Repositories/**`, or the repository location recorded in the pr
 ## Boundary and shape
 
 - Put application queries, Eloquent writes, relation/count loads, raw SQL, locks and database transaction calls in repositories. Actions constructor-inject repositories and pass the typed data and trusted actor/parent context the operation needs; they do not query, save, delete, refresh or lazy-load models themselves.
-- Use purpose-named classes such as `CreateUserRepository`, `ListUsersRepository` and `UserEmailExistsRepository`, grouped by domain. Follow established method names; without another project convention use `final readonly class`, `declare(strict_types=1);` and one fully typed public `handle()`.
-- Take normalized Data or specific typed values, never a Request or unchecked request array. Require actor/parent scope explicitly for tenant-owned operations. Do not read `auth()` or `request()` inside a repository.
+- Each persistence operation is its own small class with one fully typed public `handle()`, named for what it does, without a `Repository` suffix: `CreateUser`, `ListUsers`, `UserEmailTaken`, grouped by domain in `app/Repositories/{Domain}/`. Follow established names; without another project convention use `final readonly class` and `declare(strict_types=1);`.
+- The domain's entry file, such as `app/Repositories/Users/UserRepository.php`, constructor-injects those classes and exposes one method per operation, such as `create()` and `emailTaken()`, that delegates to its `handle()`. Actions inject only the entry repository: one import and one constructor parameter. A new query is a new operation class plus a method on the entry repository.
+- Take normalized Data or specific typed values, never a Request or unchecked request array; the one exception is a list query (see below). Require actor/parent scope explicitly for tenant-owned operations. Do not read `auth()` or `request()` inside a repository.
 - Return a model, materialized collection, paginator, scalar or typed read result, as needed by the action. Do not return an unfinished query builder for the caller to execute. Keep Resources, redirects, API envelopes, validation messages and business decisions in their existing layers.
-- Use Eloquent directly inside the repository. Do not add generic base repositories, pass-through interfaces or a duplicate query framework just to wrap each model method. Introduce shared query code only when actual callers need it.
+- Use Eloquent directly inside the operation classes. Apart from the entry file, do not add generic base repositories, pass-through interfaces or a duplicate query framework just to wrap each model method. Introduce shared query code only when actual callers need it.
 
 Framework-managed lookups remain valid outside repositories: route-model binding, validation's `exists`/`unique`, and the project's authorization/permission APIs. Custom application lookups in a policy or request go through a check/read action backed by a repository; this exception does not allow handwritten SQL in those callers.
 
@@ -21,9 +22,13 @@ Framework-managed lookups remain valid outside repositories: route-model binding
 
 - Scope every read and write to the trusted tenant, owner or parent before executing it. Resource-level authorization still applies; a permission or a supplied record ID does not prove ownership.
 - Select the columns the result needs, including keys needed to match eager-loaded relations. Load the relations and counts required by the Resource in the repository, so building the Resource performs no queries. Batch collection loads rather than querying once per row.
-- Keep sort/filter input allowlisted by the FormRequest; the repository maps accepted names to real columns. Bind data values, and never interpolate request input into SQL or raw order expressions.
-- Map create/update columns explicitly from typed input. Never pass an entire Data object, `toArray()` result or unchecked attribute bag to Eloquent. Match `#[Fillable]` for mass assignment; privileged fields come from trusted actor/parent context and are assigned explicitly.
-- Keep storage conversions, such as password hashing, alongside the persistence mapping, following the model's established casts. Preserve omitted-versus-null semantics in partial updates and skip a write when no fields were supplied.
+- Simple lookups use plain Eloquent. A table or list with search, filters or sorts uses `spatie/laravel-query-builder`: the operation takes the validated FormRequest explicitly, `QueryBuilder::for($query, $request)`, allowlists every filter and sort, and never calls `request()`. This is the one exception to "never take a Request". Bind data values, and never interpolate request input into SQL or raw order expressions.
+- A query that leaves one record out, such as a uniqueness check on update, takes that record's id under a name that says what it is (`?string $userId = null`), not the model and not a generic `$except`.
+- Write by assigning each property from the Data object, then `save()`. Don't use `fill()`, `forceFill()`, or `create([...])` and `update([...])` with attribute arrays: Larastan checks property assignments, not array keys. Never pass an entire Data object, `toArray()` result or attribute bag to Eloquent. Privileged fields come from trusted actor/parent context and are assigned the same way.
+- When create and update write the same columns, use one save operation that takes an optional model and starts with `$tenant ??= new Tenant();`, exposed on the entry repository as `save(SaveTenantData $data, ?Tenant $tenant = null)`. When they write different columns, keep separate operations.
+- Keep storage conversions, such as password hashing, alongside the persistence mapping, following the model's established casts. Preserve omitted-versus-null semantics in partial updates: write only the fields that aren't `Optional` (see `data`), and skip a write when no fields were supplied.
+- Return the saved model without `refresh()`: ids, UUIDs and timestamps are set in PHP. Refresh only for values the database fills, such as a column default or a trigger, and prefer a model `$attributes` default to a refresh.
+- When a pivot column must be typed, such as a feature's `limit` on a plan, query the Pivot model with its relation loaded instead of reading `$model->pivot`, which Larastan can't type (see `models`).
 - Use database constraints for invariants that must survive concurrent requests. An existence check can improve a business error, but does not replace a unique constraint. Translate only understood persistence failures; do not swallow unrelated database errors.
 
 ## Atomic operations
@@ -36,7 +41,7 @@ Side effects that depend on committed data must remain after-commit safe. Reuse 
 
 ## Examples
 
-`app/Repositories/Users/UserEmailExistsRepository.php` accepts only the value this check needs:
+`app/Repositories/Users/UserEmailTaken.php` accepts only the values this check needs:
 
 ```php
 <?php
@@ -47,16 +52,22 @@ namespace App\Repositories\Users;
 
 use App\Models\User;
 
-final readonly class UserEmailExistsRepository
+final readonly class UserEmailTaken
 {
-    public function handle(string $email): bool
+    public function handle(string $email, ?string $userId = null): bool
     {
-        return User::query()->where('email', $email)->exists();
+        $query = User::query()->where('email', $email);
+
+        if ($userId !== null) {
+            $query->whereKeyNot($userId);
+        }
+
+        return $query->exists();
     }
 }
 ```
 
-`app/Repositories/Users/CreateUserRepository.php` owns the explicit storage mapping:
+`app/Repositories/Users/CreateUser.php` owns the explicit storage mapping:
 
 ```php
 <?php
@@ -67,26 +78,108 @@ namespace App\Repositories\Users;
 
 use App\Data\Users\CreateUserData;
 use App\Models\User;
-use Illuminate\Support\Facades\Hash;
 
-final readonly class CreateUserRepository
+final readonly class CreateUser
 {
     public function handle(CreateUserData $data): User
     {
-        return User::query()->create([
-            'name' => $data->name,
-            'email' => $data->email,
-            'phone_number' => $data->phoneNumber,
-            'password' => Hash::make($data->password),
-        ]);
+        $user = new User();
+        $user->name = $data->name;
+        $user->email = $data->email;
+        $user->phone_number = $data->phoneNumber;
+        $user->password = $data->password;
+        $user->save();
+
+        return $user;
     }
 }
 ```
 
-The matching action checks the repository result, applies the business decision and builds the Resource (see `actions`). The unique email index remains necessary for concurrent inserts.
+The model's `hashed` cast stores the password hashed (see `models`), and the model is returned as saved.
+
+`app/Repositories/Users/ListUsers.php` filters a table through its validated request:
+
+```php
+<?php
+
+declare(strict_types=1);
+
+namespace App\Repositories\Users;
+
+use App\Http\Requests\Users\ListUsersRequest;
+use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Spatie\QueryBuilder\AllowedFilter;
+use Spatie\QueryBuilder\QueryBuilder;
+
+final readonly class ListUsers
+{
+    /** @return LengthAwarePaginator<int, User> */
+    public function handle(ListUsersRequest $request, int $perPage): LengthAwarePaginator
+    {
+        return QueryBuilder::for(User::query()->select(['id', 'name', 'email']), $request)
+            ->allowedFilters(
+                AllowedFilter::callback('search', fn (Builder $query, string $search) => $query->where(
+                    fn (Builder $matches) => $matches
+                        ->whereLike('name', '%'.$search.'%')
+                        ->orWhereLike('email', '%'.$search.'%'),
+                ))->delimiter(''),
+            )
+            ->orderBy('name')
+            ->orderBy('id')
+            ->paginate($perPage)
+            ->withQueryString();
+    }
+}
+```
+
+`delimiter('')` keeps a search containing a comma as one value. The request allowlists `filter.search` (see `requests`).
+
+`app/Repositories/Users/UserRepository.php` is the entry file the action injects:
+
+```php
+<?php
+
+declare(strict_types=1);
+
+namespace App\Repositories\Users;
+
+use App\Data\Users\CreateUserData;
+use App\Http\Requests\Users\ListUsersRequest;
+use App\Models\User;
+use Illuminate\Pagination\LengthAwarePaginator;
+
+final readonly class UserRepository
+{
+    public function __construct(
+        private CreateUser $createUser,
+        private ListUsers $listUsers,
+        private UserEmailTaken $userEmailTaken,
+    ) {}
+
+    public function create(CreateUserData $data): User
+    {
+        return $this->createUser->handle($data);
+    }
+
+    /** @return LengthAwarePaginator<int, User> */
+    public function list(ListUsersRequest $request, int $perPage): LengthAwarePaginator
+    {
+        return $this->listUsers->handle($request, $perPage);
+    }
+
+    public function emailTaken(string $email, ?string $userId = null): bool
+    {
+        return $this->userEmailTaken->handle($email, $userId);
+    }
+}
+```
+
+The matching action injects `UserRepository` alone, checks `emailTaken()`, applies the business decision and builds the Resource (see `actions`). The unique email index remains necessary for concurrent inserts.
 
 ## Verify
 
-Use focused database-backed tests for query scope, selected attributes and loaded relations, explicit write mappings, partial updates, pagination, uniqueness races, rollback and locking where applicable. Action/HTTP tests exercise the real repository integration. Check that Resource construction runs no queries and that query counts do not grow per returned row. Use the project's isolated test resources and testing schedule (see `tests`).
+Use focused database-backed tests for query scope, selected attributes and loaded relations, explicit write mappings, partial updates, list filters, pagination, uniqueness races, rollback and locking where applicable. Action/HTTP tests exercise the real repository integration. Check that Resource construction runs no queries and that query counts do not grow per returned row. Use the project's isolated test resources and testing schedule (see `tests`).
 
-API details: Laravel's [database transactions](https://laravel.com/docs/13.x/database#database-transactions), [Eloquent relationships](https://laravel.com/docs/13.x/eloquent-relationships#eager-loading) and [pessimistic locking](https://laravel.com/docs/13.x/queries#pessimistic-locking). Repository ownership is this library's architecture rule, not a Laravel framework requirement.
+API details: Laravel's [database transactions](https://laravel.com/docs/13.x/database#database-transactions), [Eloquent relationships](https://laravel.com/docs/13.x/eloquent-relationships#eager-loading) and [pessimistic locking](https://laravel.com/docs/13.x/queries#pessimistic-locking), and Spatie's [Query Builder filtering](https://spatie.be/docs/laravel-query-builder/v7/features/filtering). Repository ownership is this library's architecture rule, not a Laravel framework requirement.

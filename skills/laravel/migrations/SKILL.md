@@ -10,6 +10,8 @@ Applies to: `database/migrations/**`.
 ## Rules
 
 - Never edit a migration that has been applied or shared; add a new forward migration. Every migration returns an anonymous class with `up()` and `down()`.
+  - The exception is a project before its first deploy, with no production data. There a change such as switching a key type may edit the original migration, and the change notes that `php artisan migrate:fresh --seed` is required.
+  - After the first deploy, only forward migrations.
 - Table names are plural snake_case. Pivot tables join the two singular names alphabetically (`role_user`).
 - Keys:
   - Entity tables use `$table->uuid('id')->primary()`, with `HasUuids` on the model. Pivot and lookup tables use `$table->id()`.

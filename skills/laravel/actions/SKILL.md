@@ -11,7 +11,7 @@ Applies to: `app/Actions/**`, or `app/Services/**` in a project that uses servic
 
 - Follow the project: `app/Actions/{Domain}/` with an `Action` suffix, or `app/Services/{Domain}/` with a `Service` suffix. A new project with neither uses actions. The rules are the same for both.
 - `final readonly class` with `declare(strict_types=1);` and one public, fully typed `handle()`. Name writes with a domain verb (`CreateUserAction`), reads `List{Nouns}Action` or `Get{Noun}Action`, and checks `Is*` or `Has*`.
-- Constructor-inject repositories and reused actions; never resolve or construct them inside `handle()`. Keep per-call state in local variables.
+- Constructor-inject each domain's entry repository (`UserRepository`, not its operation classes) and reused actions; never resolve or construct them inside `handle()`. Keep per-call state in local variables.
 - Keep methods small: follow the project's complexity tool, or keep each method at a cyclomatic complexity of 5 or less. Above that, extract private methods that share the caller's transaction.
 
 ## Inputs
@@ -52,33 +52,31 @@ namespace App\Actions\Users;
 
 use App\Data\Users\CreateUserData;
 use App\Data\Users\UserResource;
-use App\Repositories\Users\CreateUserRepository;
-use App\Repositories\Users\UserEmailExistsRepository;
+use App\Repositories\Users\UserRepository;
 use Illuminate\Validation\ValidationException;
 
 final readonly class CreateUserAction
 {
     public function __construct(
-        private UserEmailExistsRepository $emailExists,
-        private CreateUserRepository $createUser,
+        private UserRepository $users,
     ) {}
 
     public function handle(CreateUserData $data): UserResource
     {
-        if ($this->emailExists->handle($data->email)) {
+        if ($this->users->emailTaken($data->email)) {
             throw ValidationException::withMessages([
                 'email' => __('The email has already been taken.'),
             ]);
         }
 
-        $user = $this->createUser->handle($data);
+        $user = $this->users->create($data);
 
         return UserResource::fromModel($user);
     }
 }
 ```
 
-`CreateUserData` has already lower-cased the email, so the repository check matches stored values; the unique index still guards concurrent inserts. Both repository implementations are shown in `repositories`.
+`CreateUserData` has already lower-cased the email, so the repository check matches stored values; the unique index still guards concurrent inserts. The action injects only the domain's entry repository; its operation classes are shown in `repositories`.
 
 ## Verify
 

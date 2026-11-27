@@ -24,14 +24,16 @@ Choose each presentation from the data, not from the component you reached for f
 - Colour comes from the data: status, severity, category, urgency. Use the brand's tokens for it (`success`, `warning`, `destructive`, `info`, and `chart-1` to `chart-5` for series; see `brand/identity`), never hand-picked hex. Keep chrome such as headers, tabs, and borders neutral. Pair every colour with text or an icon.
 - A dashboard list shows the records that need action, not the newest ones, because new records rarely need anything.
 - KPI tiles are equal siblings with one value size, each linking to its list. Show a delta only from real comparison data; never invent one.
+- Assigning from a large set, such as features to a plan, uses search-to-add plus a list of what's included, never a checklist of every option.
 
 ## 2. Tables
 
 - A table wider than the screen scrolls sideways on its own, never the page, with the name column frozen. Don't hide columns to fit.
+- The frozen column paints its own opaque background, so it takes the row's hover colour with the row's `transition-colors`. Without the transition, a seam flickers between it and the next column on hover.
 - A table taller than the screen keeps its header row sticky, so every column stays named.
 - Sortable headers are buttons, with `aria-sort` on the sorted column. Other columns show no sort icon.
 - Row actions appear on hover and focus, and all of them also sit in a trailing "…" menu so touch can reach them.
-- The table's own search filters only that table. Hide the pager when there is only one page.
+- The table's own search filters only that table. Clearing it, including with the browser's native clear button, reloads the unfiltered list. Hide the pager when there is only one page.
 
 ## 3. Design the UI you can't see
 
@@ -59,6 +61,7 @@ Labels, numbers, borders, cards, and dividers should each tell the user somethin
 |---|---|
 | History or audit log built as a table tab | Timeline in a drawer or side column |
 | Numbers left-aligned; status and category as plain text | Right-aligned numerals; chips |
+| A checklist of every option to assign from a large set | Search to add, with a list of what's included |
 | A permanent Remove button on every row of a member list | Reveal it on hover and focus, with a tooltip |
 | A tracked-out all-caps label above every heading | Drop it, or turn it into the heading |
 | Meta strings joined with middle dots (`A · B · C`) | Separate fields with layout or label them |

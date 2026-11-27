@@ -72,7 +72,7 @@ Laravel 13 conventions, including React and Inertia inside a Laravel app (`larav
 | laravel/models | `laravel/models/SKILL.md` | Creating or changing an Eloquent model, or its casts, relationships, scopes, fillable columns, or PHPDoc properties. |
 | laravel/phpstan | `laravel/phpstan/SKILL.md` | Adding or running PHPStan or Larastan in a Laravel application, or when PHPStan reports an error. |
 | laravel/requests | `laravel/requests/SKILL.md` | Adding or changing a Laravel FormRequest, validation rules, request authorization, or query parameters such as filters, sorting, and pagination. |
-| laravel/repositories | `laravel/repositories/SKILL.md` | Adding or changing application database queries, writes, relation loads, locks and transactions, or moving persistence out of an action or service. |
+| laravel/repositories | `laravel/repositories/SKILL.md` | Adding or changing application database queries, writes, relation loads, list search and filters, locks and transactions, or moving persistence out of an action or service. |
 | laravel/security | `laravel/security/SKILL.md` | Adding or reviewing Laravel authorization, policies, authentication, API tokens, CORS, CSRF exceptions, file uploads, raw queries, HTML output, rate limits, or production configuration, or before deploying a Laravel application. |
 | laravel/tests | `laravel/tests/SKILL.md` | Writing, choosing, or running tests for a Laravel application, including Pest unit, feature, action, HTTP, and browser tests, or deciding which tests a change needs. |
 

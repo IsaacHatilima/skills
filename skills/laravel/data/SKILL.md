@@ -13,7 +13,8 @@ Applies to: `app/Data/**`. Uses `spatie/laravel-data`; if it's missing, install 
 - Built only through an explicit, typed `fromRequest()` that the controller calls after the FormRequest has authorized and validated. Don't use automatic request injection, container resolution, or `from($request)`.
 - The factory reads only validated, known fields through typed getters such as `$request->string('name')`. It owns domain normalization: trimming, letter case, and turning blank strings into null. Passwords and other opaque values pass through untouched.
 - Jobs and commands build the same Data through their own factory.
-- Partial-update contracts use [`Optional`](https://spatie.be/docs/laravel-data/v4/as-a-data-transfer-object/optional-properties) properties, so an omitted field differs from an explicit `null`.
+- An operation that only ever happens as part of a larger create may take that create's Data instead of its own class, such as `CreateProfile::handle(User $user, CreateUserData $data)`.
+- Partial-update contracts use [`Optional`](https://spatie.be/docs/laravel-data/v4/as-a-data-transfer-object/optional-properties) properties, so an omitted field differs from an explicit `null`. A table's update grows through one partial-update Data, such as `UpdateUserData` with `string|Optional $email` and later a role, with one factory per form that fills only its fields. The operation writes only the fields that aren't `Optional` (see `repositories`).
 - Data is never sent to the frontend or passed wholesale to Eloquent. Actions pass the needed typed input to repositories, which map columns explicitly (see `repositories`).
 
 ## Output Resources
@@ -61,6 +62,35 @@ final class CreateUserData extends Data
 ```
 
 `string()` returns an empty string for missing or null input, so a blank phone number becomes `null` after trimming.
+
+`app/Data/Users/UpdateUserData.php` is the one update contract for the `users` table:
+
+```php
+<?php
+
+declare(strict_types=1);
+
+namespace App\Data\Users;
+
+use App\Http\Requests\Settings\UpdateEmailRequest;
+use Illuminate\Support\Str;
+use Spatie\LaravelData\Data;
+use Spatie\LaravelData\Optional;
+
+final class UpdateUserData extends Data
+{
+    public function __construct(
+        public readonly string|Optional $email = new Optional(),
+    ) {}
+
+    public static function fromEmailRequest(UpdateEmailRequest $request): self
+    {
+        return new self(email: Str::lower(trim($request->string('email')->value())));
+    }
+}
+```
+
+A later field, such as a role, joins as another `Optional` property with its own factory; the email form still leaves it `Optional`, so it isn't written.
 
 `app/Data/Users/UserResource.php`:
 
