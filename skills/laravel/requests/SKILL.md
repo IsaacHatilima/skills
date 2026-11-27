@@ -23,13 +23,14 @@ Applies to: `app/Http/Requests/**`.
 - Declare explicit rules for every accepted payload and query field, including nested keys.
   - Choose `required`, `nullable`, and `sometimes` so that omitting a field and sending `null` mean what the contract says.
   - For updates, take any model ignored by `unique` from the route, never from a submitted ID.
-- Validate user-chosen sort and filter fields against an allowlist with `Rule::in()`; the repository maps them to real columns. Password fields use `Password::defaults()` (see `security`).
+- Validate user-chosen sort fields against an allowlist with `Rule::in()`. List requests allowlist their filter keys too: `'filter' => ['nullable', 'array:search'], 'filter.search' => ['nullable', 'string', 'max:255']`. The repository maps accepted names to real columns (see `repositories`). Password fields use `Password::defaults()` (see `security`).
 - Put checks that need another field or the database in `after()`.
   - It receives injected check actions as typed parameters and returns callbacks; those actions delegate database work to repositories. The FormRequest contains no Eloquent or `DB` calls.
   - Each callback returns early when its prerequisite fields already failed.
   - Checks that need normalized values belong in the action instead.
   - Framework `exists` and `unique` rules are fine.
-- Extract rules into an `app/Concerns/*ValidationRules` trait only when two requests actually share them.
+- Rules used by one request stay inline in its `rules()`. Rules shared by two or more requests, or by a request and a Fortify action, go in a `…ValidationRules` trait such as `app/Concerns/DomainValidationRules.php`. Don't write a custom `Rule` class for checks only requests use.
+- A shared check gives each failure its own message. A hostname check, for example, says separately that the name is too long, that one label is too long, that it includes a scheme, port or path, or that it's reserved; never one generic message for several conditions.
 - Translate custom `messages()` and `attributes()`. Let Laravel's validation and authorization exceptions reach the web error bag or the central API handler (see `api-responses`). Don't override the failure methods.
 
 ## Without Spatie permissions
@@ -87,7 +88,8 @@ Tests cover:
 - guests, authorized and forbidden callers, and cross-tenant/record access;
 - the selected Spatie permission or Gate-policy path, including any approved bypass and guard/team behaviour;
 - each rule's failure, and omitted versus `null`;
-- rejected sort values;
+- each message of a shared check;
+- rejected sort values and unknown filter keys;
 - translated errors;
 - an `after()` lookup that doesn't run when its prerequisite fields failed.
 
