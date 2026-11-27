@@ -11,6 +11,12 @@ Applies to: `config/insights.php`, `app/**/*.php`.
 
 - Follow the project's `config/insights.php` and never edit it. Don't lower a `requirements` score, add `exclude` paths, or move insights to `remove`, and don't pass `--min-*` or `--disable-security-check` to get a pass. Fix the code instead.
 - If the configuration forbids something, such as private methods, restructure the code to comply.
+- Insights forbids public properties on models. Configure a model with class attributes such as `#[Table(incrementing: true)]` instead of `public $incrementing` (see `models`).
+- Pint's `laravel` preset removes the parentheses from `new User()`, which Insights requires. When both run, set this rule in `pint.json` so they agree:
+
+  ```json
+  "new_with_parentheses": {"named_class": true, "anonymous_class": false}
+  ```
 - Run Insights on the changed paths, such as `php artisan insights app/Actions/Users`. Don't run `--fix` or add Composer scripts unless asked.
 
 ## Adding Insights
