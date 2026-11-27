@@ -29,6 +29,9 @@ Applies to: `resources/js/**`. Apply each tool's rules only if that tool is inst
   - When routes change, regenerate through the project's existing workflow.
 - Use the form API of the installed Inertia version. Input names match the FormRequest fields. Show labels, field errors, and a pending state.
 - Inertia forms follow the web redirect flow; only API clients read the `api-responses` envelope.
+- JSON lookups, such as search-as-you-type, use Inertia v3's `useHttp`, debounced.
+  - Cancelling an in-flight request rejects its promise. Mark the cancellation with the `onCancel` option and report only other failures.
+  - Don't import runtime values from `@inertiajs/core`; it isn't a direct dependency.
 - Use the existing flash mechanism only after deliberate changes. Don't toast every write or replay a toast on navigation.
 
 ## UI
